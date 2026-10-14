@@ -134,6 +134,49 @@
         margin-bottom: 18px;
         box-shadow: var(--shadow);
       }
+
+      /* collapsible "advanced settings" block inside the start card */
+      .advanced {
+        margin-top: 16px;
+        border: 1px solid var(--border-soft);
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .advanced > summary {
+        cursor: pointer;
+        padding: 14px 18px;
+        font-weight: 600;
+        color: var(--text);
+        list-style: none;
+        user-select: none;
+      }
+
+      .advanced > summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .advanced > summary::before {
+        content: "\25B8\00a0";
+        color: var(--accent);
+      }
+
+      .advanced[open] > summary::before {
+        content: "\25BE\00a0";
+      }
+
+      .advanced > summary:hover {
+        color: var(--accent);
+      }
+
+      .advanced > *:not(summary) {
+        padding-left: 18px;
+        padding-right: 18px;
+      }
+
+      .advanced > *:not(summary):last-child {
+        padding-bottom: 18px;
+      }
       .card > h2 {
         margin: 0 0 4px;
         font-size: 1.02rem;
@@ -763,108 +806,30 @@
         <span class="pill"><span class="dot"></span> Client-side research &middot; render via GitHub Actions</span>
       </header>
 
-      <!-- ---------------- configuration ---------------- -->
-      <section class="card" aria-labelledby="config-title">
-        <h2 id="config-title">API configuration</h2>
+      <!-- ---------------- start here ---------------- -->
+      <section class="card" aria-labelledby="start-title">
+        <h2 id="start-title">Start here</h2>
         <p class="sub">
-          Your keys stay in this browser only (<code>localStorage</code>). The YouTube key and the
-          direct Gemini engine talk straight to Google; the OmniRoute engine talks only to the
-          gateway URL you supply. Nothing is relayed through any third-party server.
+          Paste a <strong>YouTube Data API v3 key</strong>, type a topic and press
+          <strong>Analyze</strong>. Research runs entirely in your browser &mdash; none of your keys
+          are sent to any server of ours.
         </p>
 
-        <div class="grid">
-          <div class="field">
-            <label for="yt-key">YouTube Data API v3 key <span class="req">required</span></label>
-            <div class="input-group">
-              <input id="yt-key" type="password" autocomplete="off" spellcheck="false" placeholder="AIza..." />
-              <button class="toggle" type="button" data-toggle="yt-key" aria-label="Show or hide YouTube key" aria-pressed="false"></button>
-            </div>
+        <div class="field" style="max-width: 620px">
+          <label for="yt-key">YouTube Data API v3 key <span class="req">required</span></label>
+          <div class="input-group">
+            <input id="yt-key" type="password" autocomplete="off" spellcheck="false" placeholder="AIza..." />
+            <button class="toggle" type="button" data-toggle="yt-key" aria-label="Show or hide YouTube key" aria-pressed="false"></button>
           </div>
-
-          <div class="field">
-            <label for="ai-provider">Blueprint engine</label>
-            <select id="ai-provider">
-              <option value="gemini">Google Gemini (direct API)</option>
-              <option value="omniroute">OmniRoute gateway (OpenAI-compatible)</option>
-            </select>
-          </div>
+          <p class="hint">
+            Create one in the
+            <a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" rel="noopener noreferrer">Google Cloud console</a>
+            (enable <em>YouTube Data API v3</em>), restrict it to this site and paste it above. It is
+            saved in this browser only.
+          </p>
         </div>
 
-        <!-- Gemini (direct API) settings -->
-        <div id="gemini-settings" style="margin-top: 14px">
-          <div class="grid">
-            <div class="field">
-              <label for="gemini-key">Gemini API key <span class="opt">optional</span></label>
-              <div class="input-group">
-                <input id="gemini-key" type="password" autocomplete="off" spellcheck="false" placeholder="AIza..." />
-                <button class="toggle" type="button" data-toggle="gemini-key" aria-label="Show or hide Gemini key" aria-pressed="false"></button>
-              </div>
-            </div>
-            <div class="field">
-              <label for="gemini-model">Gemini model</label>
-              <select id="gemini-model">
-                <option value="gemini-2.5-flash">gemini-2.5-flash (fast, recommended)</option>
-                <option value="gemini-2.5-pro">gemini-2.5-pro (highest quality)</option>
-                <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-                <option value="gemini-1.5-flash">gemini-1.5-flash</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <!-- OmniRoute gateway settings (OpenAI-compatible, local or remote) -->
-        <div id="omniroute-settings" style="margin-top: 14px" hidden>
-          <div class="grid">
-            <div class="field">
-              <label for="omniroute-url">OmniRoute base URL</label>
-              <input id="omniroute-url" type="url" autocomplete="off" spellcheck="false" placeholder="http://localhost:20128/v1" />
-            </div>
-            <div class="field">
-              <label for="omniroute-key">OmniRoute API key <span class="opt">optional if keyless</span></label>
-              <div class="input-group">
-                <input id="omniroute-key" type="password" autocomplete="off" spellcheck="false" placeholder="your-omniroute-key" />
-                <button class="toggle" type="button" data-toggle="omniroute-key" aria-label="Show or hide OmniRoute key" aria-pressed="false"></button>
-              </div>
-            </div>
-          </div>
-          <div class="field" style="max-width: 420px; margin-top: 14px">
-            <label for="omniroute-model">Model or route</label>
-            <input id="omniroute-model" list="omniroute-models" autocomplete="off" spellcheck="false" placeholder="auto" />
-            <datalist id="omniroute-models">
-              <option value="auto"></option>
-              <option value="auto/cheap"></option>
-              <option value="auto/fast"></option>
-              <option value="auto/smart"></option>
-              <option value="gemini/gemini-2.5-flash"></option>
-              <option value="gemini/gemini-2.5-pro"></option>
-              <option value="openai/gpt-5.4"></option>
-              <option value="claude/claude-sonnet-4.5"></option>
-            </datalist>
-          </div>
-        </div>
-
-        <div class="row-actions">
-          <button class="btn btn-ghost" type="button" id="clear-keys">Clear saved keys</button>
-          <span class="pill" id="save-state" hidden><span class="dot"></span> Keys saved locally</span>
-        </div>
-
-        <p class="hint">
-          New here? Create a key in the
-          <a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" rel="noopener noreferrer">Google Cloud console</a>
-          (enable <em>YouTube Data API v3</em>) and one in
-          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a>
-          (for Gemini). Restrict the YouTube key to your Pages domain for safety.
-          For the OmniRoute engine, run your own gateway (local or hosted) and point it at the base
-          URL above &mdash;
-          <a href="https://github.com/diegosouzapw/OmniRoute" target="_blank" rel="noopener noreferrer">learn more</a>.
-        </p>
-      </section>
-
-      <!-- ---------------- search ---------------- -->
-      <section class="card" aria-labelledby="search-title">
-        <h2 id="search-title">Research a topic</h2>
-        <p class="sub">Enter a niche or keyword. TrendScope pulls live YouTube data and builds an SEO blueprint.</p>
-        <form id="search-form">
+        <form id="search-form" style="margin-top: 14px">
           <div class="search-row">
             <input class="grow" id="query" type="search" placeholder="e.g. home espresso machines" autocomplete="off" required />
             <select id="region" aria-label="Trending region">
@@ -896,6 +861,115 @@
             <button class="chip" type="button">van life conversion</button>
           </div>
         </form>
+
+        <details class="advanced" id="advanced-card">
+          <summary>Advanced settings &mdash; AI engine, data source, GitHub token</summary>
+
+          <p class="sub" style="margin-top: 12px">
+            Optional. Everything here is saved in this browser only. The defaults
+            (<em>browser research</em> + the <em>direct Gemini API</em>) need nothing beyond the key
+            above.
+          </p>
+
+          <div class="grid">
+            <div class="field">
+              <label for="research-mode">Where to fetch the YouTube data</label>
+              <select id="research-mode">
+                <option value="auto">Auto &mdash; browser, fall back to GitHub</option>
+                <option value="browser">This browser (instant)</option>
+                <option value="server">GitHub Actions (server-side)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="ai-provider">Blueprint engine</label>
+              <select id="ai-provider">
+                <option value="gemini">Google Gemini (direct API)</option>
+                <option value="omniroute">OmniRoute gateway (OpenAI-compatible)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Gemini (direct API) settings -->
+          <div id="gemini-settings" style="margin-top: 14px">
+            <div class="grid">
+              <div class="field">
+                <label for="gemini-key">Gemini API key <span class="opt">optional</span></label>
+                <div class="input-group">
+                  <input id="gemini-key" type="password" autocomplete="off" spellcheck="false" placeholder="AIza..." />
+                  <button class="toggle" type="button" data-toggle="gemini-key" aria-label="Show or hide Gemini key" aria-pressed="false"></button>
+                </div>
+              </div>
+              <div class="field">
+                <label for="gemini-model">Gemini model</label>
+                <select id="gemini-model">
+                  <option value="gemini-2.5-flash">gemini-2.5-flash (fast, recommended)</option>
+                  <option value="gemini-2.5-pro">gemini-2.5-pro (highest quality)</option>
+                  <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+                  <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- OmniRoute gateway settings (OpenAI-compatible, local or remote) -->
+          <div id="omniroute-settings" style="margin-top: 14px" hidden>
+            <div class="grid">
+              <div class="field">
+                <label for="omniroute-url">OmniRoute base URL</label>
+                <input id="omniroute-url" type="url" autocomplete="off" spellcheck="false" placeholder="http://localhost:20128/v1" />
+              </div>
+              <div class="field">
+                <label for="omniroute-key">OmniRoute API key <span class="opt">optional if keyless</span></label>
+                <div class="input-group">
+                  <input id="omniroute-key" type="password" autocomplete="off" spellcheck="false" placeholder="your-omniroute-key" />
+                  <button class="toggle" type="button" data-toggle="omniroute-key" aria-label="Show or hide OmniRoute key" aria-pressed="false"></button>
+                </div>
+              </div>
+            </div>
+            <div class="field" style="max-width: 420px; margin-top: 14px">
+              <label for="omniroute-model">Model or route</label>
+              <input id="omniroute-model" list="omniroute-models" autocomplete="off" spellcheck="false" placeholder="auto" />
+              <datalist id="omniroute-models">
+                <option value="auto"></option>
+                <option value="auto/cheap"></option>
+                <option value="auto/fast"></option>
+                <option value="auto/smart"></option>
+                <option value="gemini/gemini-2.5-flash"></option>
+                <option value="gemini/gemini-2.5-pro"></option>
+                <option value="openai/gpt-5.4"></option>
+                <option value="claude/claude-sonnet-4.5"></option>
+              </datalist>
+            </div>
+          </div>
+
+          <!-- GitHub token: shared by server-side research and by the video render -->
+          <div class="field" style="margin-top: 14px; max-width: 620px">
+            <label for="gh-token">GitHub token <span class="opt">needed for the GitHub Actions modes</span></label>
+            <div class="input-group">
+              <input id="gh-token" type="password" autocomplete="off" spellcheck="false" placeholder="ghp_... or github_pat_..." />
+              <button class="toggle" type="button" data-toggle="gh-token" aria-label="Show or hide the GitHub token" aria-pressed="false"></button>
+            </div>
+            <p class="hint">
+              Kept in this browser only. Used by the <em>GitHub Actions</em> data source above and by
+              <em>Render video</em> below. It only dispatches workflows on
+              <strong id="repo-name">this repository</strong> &mdash; a classic
+              <code>repo</code> + <code>workflow</code> token, or a fine-grained token with
+              <em>Actions: read and write</em>.
+            </p>
+          </div>
+
+          <div class="row-actions">
+            <button class="btn btn-ghost" type="button" id="clear-keys">Clear saved keys</button>
+            <span class="pill" id="save-state" hidden><span class="dot"></span> Keys saved locally</span>
+          </div>
+
+          <p class="hint">
+            For the OmniRoute engine, run your own gateway (local or hosted) and point it at the base
+            URL above &mdash;
+            <a href="https://github.com/diegosouzapw/OmniRoute" target="_blank" rel="noopener noreferrer">learn more</a>.
+            It must allow this page's origin (CORS) before the browser can call it.
+          </p>
+        </details>
       </section>
 
       <!-- ---------------- status ---------------- -->
@@ -971,31 +1045,11 @@
           out in an animated editor (Revideo), then hands the finished file back here.
         </p>
 
-        <div class="field" style="max-width: 560px">
-          <label for="gh-token">GitHub token <span class="req">required to render</span></label>
-          <div class="input-group">
-            <input
-              id="gh-token"
-              type="password"
-              autocomplete="off"
-              spellcheck="false"
-              placeholder="ghp_… or github_pat_…"
-            />
-            <button
-              class="toggle"
-              type="button"
-              data-toggle="gh-token"
-              aria-label="Show or hide the GitHub token"
-              aria-pressed="false"
-            ></button>
-          </div>
-          <p class="hint">
-            Kept in this browser only (<code>localStorage</code>). It only needs to dispatch
-            workflows on <strong id="repo-name">this repository</strong> — classic
-            <code>repo</code> + <code>workflow</code>, or a fine-grained token with
-            <em>Actions: read and write</em>.
-          </p>
-        </div>
+        <p class="hint" id="video-token-hint">
+          Rendering needs a <strong>GitHub token</strong> — set it once in
+          <a href="#advanced-card" id="open-advanced">Advanced settings</a> (top of the page). It
+          only dispatches the <code>ultimate-youtube-engine</code> workflow on this repository.
+        </p>
 
         <div class="grid" style="margin-top: 14px">
           <div class="field">
@@ -1067,6 +1121,7 @@
 
       const LS = {
         yt: "trendscope.youtubeKey",
+        mode: "trendscope.researchMode",
         provider: "trendscope.aiProvider",
         gemini: "trendscope.geminiKey",
         model: "trendscope.geminiModel",
@@ -1143,6 +1198,7 @@
 
       function loadConfig() {
         $("yt-key").value = store.get(LS.yt);
+        $("research-mode").value = store.get(LS.mode, "auto");
         $("gemini-key").value = store.get(LS.gemini);
         $("gemini-model").value = store.get(LS.model, "gemini-2.5-flash");
         $("ai-provider").value = store.get(LS.provider, "gemini");
@@ -1196,6 +1252,18 @@
 
         $("region").addEventListener("change", (e) => store.set(LS.region, e.target.value));
         $("max-results").addEventListener("change", () => store.set(LS.max, $("max-results").value));
+        $("research-mode").addEventListener("change", (e) => {
+          store.set(LS.mode, e.target.value);
+          flashSaved();
+        });
+
+        const openAdvanced = (e) => {
+          e.preventDefault();
+          $("advanced-card").open = true;
+          $("advanced-card").scrollIntoView({ behavior: "smooth", block: "start" });
+          $("gh-token").focus({ preventScroll: true });
+        };
+        $("open-advanced").addEventListener("click", openAdvanced);
 
         $("clear-keys").addEventListener("click", () => {
           if (!confirm("Remove the saved YouTube, AI and GitHub keys from this browser?")) return;
@@ -1751,14 +1819,33 @@
         const region = $("region").value;
         const max = parseInt($("max-results").value, 10) || 25;
 
-        if (!ytKey) {
+        const mode = $("research-mode").value || "auto";
+        const canServer = Boolean(gh.owner && gh.repo && $("gh-token").value.trim());
+        // Without a YouTube key in the browser the only usable source is GitHub.
+        const wantServer = mode === "server" || (!ytKey && canServer);
+
+        if (!ytKey && !canServer) {
           showStatus({
             title: "YouTube API key required",
-            detail: "Add your YouTube Data API v3 key in the configuration panel above.",
+            detail:
+              "Paste your YouTube Data API v3 key above — or add a GitHub token in Advanced settings to fetch the data on GitHub's servers instead.",
             busy: false,
             error: true,
           });
           $("yt-key").focus();
+          return;
+        }
+
+        if (mode === "server" && !canServer) {
+          showStatus({
+            title: "GitHub token required for server-side research",
+            detail:
+              "Open Advanced settings, add a GitHub token (Actions: read and write), or switch the data source back to Auto.",
+            busy: false,
+            error: true,
+          });
+          $("advanced-card").open = true;
+          $("gh-token").focus();
           return;
         }
 
@@ -1767,44 +1854,53 @@
         setBusy(true);
         STEPS.forEach((s) => setStep(s, ""));
 
+        const step = (name, state) => setStep(name, state);
+        const stepServer = () => {
+          step("search", "done");
+          step("details", "done");
+          step("trending", "done");
+        };
+
         try {
           showStatus({
-            title: `Searching YouTube for “${query}”…`,
-            detail: "Querying the YouTube Data API v3.",
+            title: wantServer
+              ? `Researching “${query}” on GitHub Actions…`
+              : `Searching YouTube for “${query}”…`,
+            detail: wantServer
+              ? "Dispatching the youtube-research workflow and waiting for its result."
+              : "Querying the YouTube Data API v3.",
             steps: true,
           });
-          setStep("search", "active");
-          const search = await yt.search(query, ytKey, max);
-          const ids = (search.items || [])
-            .map((it) => it.id?.videoId)
-            .filter(Boolean);
-          setStep("search", "done");
 
-          showStatus({
-            title: "Collecting competitor statistics…",
-            detail: "Fetching views, likes and comments.",
-            steps: true,
-          });
-          setStep("details", "active");
-          const details = await yt.videos(ids, ytKey);
-          setStep("details", "done");
-
-          showStatus({
-            title: "Scanning regional trending videos…",
-            detail: `Region ${region}.`,
-            steps: true,
-          });
-          setStep("trending", "active");
-          let trending = { items: [] };
-          try {
-            trending = await yt.trending(region, ytKey);
-          } catch {
-            /* trending is a bonus; keep going without it */
+          let data;
+          if (wantServer) {
+            step("search", "active");
+            data = await researchOnGitHub(query, region, max);
+            stepServer();
+          } else {
+            try {
+              data = await researchInBrowser(query, region, max, ytKey, step);
+            } catch (err) {
+              // Auto mode: a blocked browser (CORS, API-key referrer/HTTP
+              // restrictions, proxy) retries the same research on GitHub.
+              if (mode !== "auto" || !canServer || !browserBlocked(err)) throw err;
+              showStatus({
+                title: "The browser was blocked — retrying on GitHub Actions…",
+                detail: `${err.message || err} — dispatching the youtube-research workflow.`,
+                steps: true,
+              });
+              step("search", "active");
+              data = await researchOnGitHub(query, region, max);
+              stepServer();
+            }
           }
-          setStep("trending", "done");
+
+          const search = data.search || { items: [] };
+          const details = data.videos || { items: [] };
+          const trending = data.trending || { items: [] };
 
           showStatus({ title: "Extracting topics & analytics…", detail: "Scoring keywords and metrics.", steps: true });
-          setStep("analyze", "active");
+          step("analyze", "active");
           const videos = (details.items || []).map((v) => {
             const s = v.snippet || {};
             const st = v.statistics || {};
@@ -2052,6 +2148,120 @@
         );
       }
 
+      function ghToken() {
+        return $("gh-token").value.trim();
+      }
+
+      function ghHeaders(extra) {
+        return {
+          Accept: "application/vnd.github+json",
+          Authorization: "Bearer " + ghToken(),
+          "X-GitHub-Api-Version": "2022-11-28",
+          ...(extra || {}),
+        };
+      }
+
+      const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+      /** True when the failure looks like the browser (not YouTube) being blocked. */
+      function browserBlocked(err) {
+        if (err instanceof TypeError) return true; // CORS / offline / DNS
+        if (err && err.status === 403) return true; // key restriction / referrer / quota
+        return /referrer|api key not valid|blocked|CORS|Failed to fetch/i.test(
+          String((err && err.message) || ""),
+        );
+      }
+
+      /**
+       * Dispatch a repository_dispatch workflow and return the JSON payload from
+       * the artifact it uploads. Used by the server-side research fallback.
+       */
+      async function dispatchAndCollectJson(eventType, payload, artifactName, intervalMs = 4000) {
+        const base = `/repos/${gh.owner}/${gh.repo}`;
+        await ghApi(`${base}/dispatches`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ event_type: eventType, client_payload: payload }),
+        });
+
+        const deadline = Date.now() + 10 * 60 * 1000;
+        for (;;) {
+          const found = await ghApi(`${base}/actions/artifacts?name=${artifactName}`);
+          if (found.total_count) {
+            const artifact = found.artifacts.find((a) => !a.expired) || found.artifacts[0];
+            return await readArtifactJson(artifact);
+          }
+          const runs = await ghApi(`${base}/actions/runs?event=repository_dispatch&per_page=30`);
+          const run = (runs.workflow_runs || []).find((r) =>
+            (r.name || "").includes(payload.job_id),
+          );
+          if (run && run.status === "completed" && run.conclusion !== "success") {
+            throw new Error(`the GitHub run ${run.conclusion} — ${run.html_url}`);
+          }
+          if (Date.now() > deadline) {
+            throw new Error("timed out waiting for the GitHub job to finish");
+          }
+          await sleep(intervalMs);
+        }
+      }
+
+      async function readArtifactJson(artifact) {
+        const res = await fetch(artifact.archive_download_url, { headers: ghHeaders() });
+        if (!res.ok) throw new Error(`artifact download failed (${res.status} ${res.statusText}).`);
+        if (typeof JSZip === "undefined") {
+          throw new Error("The JSZip library did not load — check your connection.");
+        }
+        const zip = await JSZip.loadAsync(await res.blob());
+        const name = Object.keys(zip.files).find(
+          (n) => n.toLowerCase().endsWith(".json") && !zip.files[n].dir,
+        );
+        if (!name) throw new Error("No JSON file inside the artifact.");
+        return JSON.parse(await zip.files[name].async("string"));
+      }
+
+      /** The three YouTube Data API v3 calls, executed in this browser. */
+      async function researchInBrowser(query, region, max, apiKey, step) {
+        step("search", "active");
+        const search = await yt.search(query, apiKey, max);
+        const ids = (search.items || []).map((it) => it.id?.videoId).filter(Boolean);
+        step("search", "done");
+
+        step("details", "active");
+        const videos = await yt.videos(ids, apiKey);
+        step("details", "done");
+
+        step("trending", "active");
+        let trending = { items: [] };
+        try {
+          trending = await yt.trending(region, apiKey);
+        } catch {
+          /* trending is a bonus; keep going without it */
+        }
+        step("trending", "done");
+
+        return { search, videos, trending };
+      }
+
+      /**
+       * The same three calls, executed by the youtube-research workflow on
+       * GitHub's runners. The API key travels in the dispatch payload unless the
+       * repository has a YOUTUBE_API_KEY secret configured.
+       */
+      async function researchOnGitHub(query, region, max) {
+        const jobId = newJobId();
+        const payload = { job_id: jobId, query, region, max_results: max };
+        const apiKey = $("yt-key").value.trim();
+        if (apiKey) payload.yt_key = apiKey;
+
+        const data = await dispatchAndCollectJson("research", payload, `research-${jobId}`);
+        if (data && data.error) throw new Error(data.error);
+        return {
+          search: data.search || { items: [] },
+          videos: data.videos || { items: [] },
+          trending: data.trending || { items: [] },
+        };
+      }
+
       let renderJob = null;
       let renderTimer = null;
       let renderBusy = false;
@@ -2096,8 +2306,10 @@
         }
         if (renderBusy) return;
         if (!$("gh-token").value.trim()) {
-          $("gh-token").focus();
-          toastMessage("Add a GitHub token first.");
+          $("advanced-card").open = true;
+          $("advanced-card").scrollIntoView({ behavior: "smooth", block: "start" });
+          $("gh-token").focus({ preventScroll: true });
+          toastMessage("Add a GitHub token in Advanced settings first.");
           return;
         }
 
@@ -2197,13 +2409,7 @@
       }
 
       async function fetchArtifact(artifact) {
-        const res = await fetch(artifact.archive_download_url, {
-          headers: {
-            Accept: "application/vnd.github+json",
-            Authorization: "Bearer " + $("gh-token").value.trim(),
-            "X-GitHub-Api-Version": "2022-11-28",
-          },
-        });
+        const res = await fetch(artifact.archive_download_url, { headers: ghHeaders() });
         if (!res.ok) {
           throw new Error(`Artifact download failed (${res.status} ${res.statusText}).`);
         }

@@ -1,0 +1,75 @@
+name: youtube-research
+
+# Shows up as "research <job_id>" in the Actions list so the dashboard can
+# match its own dispatch while polling.
+run-name: research ${{ github.event.client_payload.job_id }}
+
+# Triggered by the Pages dashboard with:
+#   POST /repos/{owner}/{repo}/dispatches
+#   { event_type: "research",
+#     client_payload: { job_id, query, region, max_results, yt_key? } }
+on:
+  repository_dispatch:
+    types: [research]
+
+permissions:
+  contents: read
+
+jobs:
+  research:
+    name: Research
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Read the dispatch payload
+        run: |
+          set -euo pipefail
+          job_id="$(jq -r '.client_payload.job_id // ""' "$GITHUB_EVENT_PATH")"
+          if [[ ! "$job_id" =~ ^[A-Za-z0-9]+$ ]]; then
+            echo "::error::Invalid job_id (must be alphanumeric), refusing to continue."
+            exit 1
+          fi
+          echo "JOB_ID=$job_id" >> "$GITHUB_ENV"
+
+      - name: Resolve the YouTube API key
+        env:
+          # Optional: set this repository secret to run without sending a key.
+          SECRET_YT_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: |
+          set -euo pipefail
+          key="$(jq -r '.client_payload.yt_key // ""' "$GITHUB_EVENT_PATH")"
+          if [ -z "$key" ] || [ "$key" = "null" ]; then
+            key="$SECRET_YT_KEY"
+          fi
+          if [ -n "$key" ]; then
+            echo "::add-mask::$key"
+            echo "YT_KEY=$key" >> "$GITHUB_ENV"
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Fetch the YouTube data
+        run: node scripts/research.mjs
+
+      - name: Upload the research data
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-${{ github.event.client_payload.job_id }}
+          path: research.json
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Fail if the research reported an error
+        run: |
+          set -euo pipefail
+          if jq -e '.error' research.json >/dev/null 2>&1; then
+            echo "::error::$(jq -r '.error' research.json)"
+            exit 1
+          fi
