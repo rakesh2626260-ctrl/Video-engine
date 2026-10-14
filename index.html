@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>video-engine — serverless video generator</title>
+    <style>
+      :root {
+        --bg: #0d1117;
+        --bg-soft: #12181f;
+        --card: #161b22;
+        --border: #262d36;
+        --text: #e6edf3;
+        --muted: #8b949e;
+        --accent: #58a6ff;
+        --ok: #2ea043;
+        --warn: #d29922;
+        --err: #f85149;
+        --radius: 14px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background: radial-gradient(1200px 600px at 50% -10%, #16202e 0%, var(--bg) 55%) fixed;
+        color: var(--text);
+        font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+        -webkit-text-size-adjust: 100%;
+        min-height: 100vh;
+      }
+
+      .wrap {
+        width: 100%;
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 28px 18px 64px;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 6px;
+      }
+
+      .logo {
+        width: 34px;
+        height: 34px;
+        flex: 0 0 auto;
+        border-radius: 10px;
+        background: linear-gradient(145deg, #1f6feb, #2ea043);
+        display: grid;
+        place-items: center;
+        font-size: 17px;
+      }
+
+      h1 {
+        font-size: 22px;
+        letter-spacing: -0.01em;
+        margin: 0;
+      }
+
+      .sub {
+        color: var(--muted);
+        font-size: 15px;
+        margin: 2px 0 22px;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 18px;
+        margin-bottom: 16px;
+      }
+
+      label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 8px;
+      }
+
+      .hint {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+        margin: 8px 0 0;
+      }
+
+      input,
+      textarea {
+        width: 100%;
+        font-size: 16px;
+        color: var(--text);
+        background: var(--bg-soft);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 13px;
+        font-family: inherit;
+        line-height: 1.55;
+        outline: none;
+        -webkit-appearance: none;
+      }
+
+      input:focus,
+      textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.16);
+      }
+
+      textarea {
+        resize: vertical;
+        min-height: 132px;
+      }
+
+      textarea.code {
+        font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+          "Liberation Mono", monospace;
+        font-size: 15px;
+        line-height: 1.6;
+        min-height: 190px;
+        tab-size: 2;
+      }
+
+      .field + .field {
+        margin-top: 18px;
+      }
+
+      button {
+        width: 100%;
+        font: inherit;
+        font-weight: 600;
+        color: #fff;
+        background: #21262d;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px 16px;
+        cursor: pointer;
+        transition: filter 0.15s ease, opacity 0.15s ease;
+      }
+
+      button:hover:not(:disabled) {
+        filter: brightness(1.15);
+      }
+
+      button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      #generate {
+        background: linear-gradient(180deg, #1f6feb, #1a5fd0);
+        border-color: #1a5fd0;
+      }
+
+      #download {
+        background: linear-gradient(180deg, #2ea043, #238636);
+        border-color: #238636;
+      }
+
+      .row {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .status {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .dot {
+        width: 11px;
+        height: 11px;
+        flex: 0 0 auto;
+        margin-top: 6px;
+        border-radius: 50%;
+        background: var(--muted);
+      }
+
+      .dot.live {
+        background: var(--accent);
+        animation: pulse 1.4s ease-out infinite;
+      }
+
+      .dot.ok {
+        background: var(--ok);
+        animation: none;
+      }
+
+      .dot.error {
+        background: var(--err);
+        animation: none;
+      }
+
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(88, 166, 255, 0.55);
+          opacity: 1;
+        }
+        70% {
+          box-shadow: 0 0 0 12px rgba(88, 166, 255, 0);
+          opacity: 0.75;
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(88, 166, 255, 0);
+          opacity: 1;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .dot.live {
+          animation: none;
+        }
+      }
+
+      .status-title {
+        font-weight: 600;
+        font-size: 15px;
+        margin: 0;
+      }
+
+      .status-detail {
+        color: var(--muted);
+        font-size: 14px;
+        margin: 2px 0 0;
+        word-break: break-word;
+      }
+
+      .status-detail a {
+        color: var(--accent);
+      }
+
+      video {
+        width: 100%;
+        margin-top: 14px;
+        border-radius: 10px;
+        background: #000;
+        border: 1px solid var(--border);
+      }
+
+      .endpoint {
+        color: var(--muted);
+        font-size: 12.5px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        margin-top: 10px;
+        word-break: break-all;
+      }
+
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 13px;
+        background: var(--bg-soft);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 1px 5px;
+      }
+
+      footer {
+        color: var(--muted);
+        font-size: 13px;
+        text-align: center;
+        margin-top: 26px;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <header>
+        <div class="logo">🎬</div>
+        <div>
+          <h1>video-engine</h1>
+        </div>
+      </header>
+      <p class="sub">
+        Paste a voiceover script and a code block. GitHub Actions types it out,
+        narrates it with Piper and renders an MP4 — no server of your own.
+      </p>
+
+      <section class="card" aria-labelledby="token-label">
+        <div class="field">
+          <label id="token-label" for="token">GitHub token</label>
+          <input id="token" type="password" autocomplete="off" spellcheck="false"
+            placeholder="Paste a GitHub token (repo + workflow)…"
+          <p class="hint">
+            Kept in this browser only (<code>localStorage</code>). Use a token that
+            can dispatch workflows on <strong id="repo-name">this repository</strong>
+            (classic: <code>repo</code> + <code>workflow</code>; fine-grained:
+            <em>Actions: read &amp; write</em>). It is never committed.
+          </p>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="field">
+          <label for="script">Voiceover script</label>
+          <textarea id="script" placeholder="In this video we build a tiny typewriter effect…"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="code">Code block</label>
+          <textarea id="code" class="code" spellcheck="false" wrap="off"
+            placeholder="const hello = () => 'world';"></textarea>
+        </div>
+
+        <div class="field">
+          <button id="generate" type="button">Generate</button>
+          <p class="endpoint" id="endpoint"></p>
+        </div>
+      </section>
+
+      <section class="card" id="status-card">
+        <div class="status">
+          <span class="dot" id="dot" aria-hidden="true"></span>
+          <div>
+            <p class="status-title" id="status-title">Idle</p>
+            <p class="status-detail" id="status-detail">
+              Waiting for your script.
+            </p>
+          </div>
+        </div>
+
+        <div style="margin-top: 16px" class="row">
+          <button id="download" type="button" hidden>Download Video</button>
+          <video id="preview" controls playsinline hidden></video>
+        </div>
+      </section>
+
+      <footer>
+        <span id="powered">Rendered by Revideo + Piper on GitHub Actions</span>
+      </footer>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script>
+      /* ------------------------------------------------------------------ *
+       * Configuration. Replace these placeholders with your own values, or
+       * leave them as-is: the page then reads them from the github.io URL and
+       * asks for a token that is stored in localStorage.
+       * ------------------------------------------------------------------ */
+      const GITHUB_TOKEN = "YOUR_GITHUB_TOKEN";
+      const REPO_OWNER = "YOUR_GITHUB_USERNAME";
+      const REPO_NAME = "YOUR_REPOSITORY_NAME";
+
+      const API = 'https://api.github.com';
+      const POLL_MS = 10000;
+      const TOKEN_KEY = 'video-engine:github-token';
+      const SCRIPT_KEY = 'video-engine:script';
+      const CODE_KEY = 'video-engine:code-block';
+
+      const isPlaceholder = value =>
+        !value || /^YOUR_/i.test(String(value).trim());
+
+      /* --- resolve owner / repo (placeholders -> github.io URL) ---------- */
+
+      let owner = isPlaceholder(REPO_OWNER) ? '' : REPO_OWNER.trim();
+      let repo = isPlaceholder(REPO_NAME) ? '' : REPO_NAME.trim();
+      let detected = { owner: !!owner, repo: !!repo };
+
+      (function detectFromPagesUrl() {
+        const host = location.hostname;
+        if (!host.endsWith('.github.io')) return;
+        const parts = host.split('.');
+        const user = parts[0];
+        const segments = location.pathname.split('/').filter(Boolean);
+        if (!owner && user) {
+          owner = user;
+          detected.owner = true;
+        }
+        if (!repo && segments.length > 0) {
+          repo = decodeURIComponent(segments[0]);
+          detected.repo = true;
+        }
+      })();
+
+      /* --- token -------------------------------------------------------- */
+
+      const tokenIsPlaceholder = isPlaceholder(GITHUB_TOKEN);
+      let token = tokenIsPlaceholder ? localStorage.getItem(TOKEN_KEY) || '' : GITHUB_TOKEN;
+
+      /* --- elements ----------------------------------------------------- */
+
+      const el = {
+        tokenCard: document.querySelector('[aria-labelledby="token-label"]'),
+        token: document.getElementById('token'),
+        repoName: document.getElementById('repo-name'),
+        script: document.getElementById('script'),
+        code: document.getElementById('code'),
+        generate: document.getElementById('generate'),
+        endpoint: document.getElementById('endpoint'),
+        dot: document.getElementById('dot'),
+        title: document.getElementById('status-title'),
+        detail: document.getElementById('status-detail'),
+        download: document.getElementById('download'),
+        preview: document.getElementById('preview'),
+      };
+
+      el.repoName.textContent = owner && repo ? owner + '/' + repo : 'your repository';
+      el.tokenCard.hidden = !tokenIsPlaceholder;
+      if (tokenIsPlaceholder) el.token.value = token;
+      el.endpoint.textContent =
+        owner && repo
+          ? 'POST ' + API + '/repos/' + owner + '/' + repo + '/dispatches'
+          : 'Owner/repo could not be detected. Open this page from your GitHub Pages URL.';
+
+      el.script.value = localStorage.getItem(SCRIPT_KEY) || '';
+      el.code.value =
+        localStorage.getItem(CODE_KEY) ||
+        [
+          "// Type the code you want on screen",
+          "export async function render(input) {",
+          "  const frame = await build(input); // 60fps",
+          "  return frame;",
+          "}",
+        ].join('\n');
+
+      /* --- status helpers ----------------------------------------------- */
+
+      let running = false;
+      let pollTimer = null;
+      let jobId = null;
+      let dispatchedAt = 0;
+      let artifact = null;
+
+      function setStatus(state, title, detail, link) {
+        el.dot.className = 'dot' + (state ? ' ' + state : '');
+        el.title.textContent = title;
+        el.detail.innerHTML = '';
+        el.detail.append(detail);
+        if (link) {
+          const a = document.createElement('a');
+          a.href = link.href;
+          a.target = '_blank';
+          a.rel = 'noopener';
+          a.textContent = link.text;
+          el.detail.append(' ', a);
+        }
+      }
+
+      function fail(detail, link) {
+        stopPolling();
+        running = false;
+        el.generate.disabled = false;
+        el.generate.textContent = 'Generate';
+        setStatus('error', 'Failed', detail, link);
+      }
+
+      function stopPolling() {
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = null;
+      }
+
+      async function api(path) {
+        const res = await fetch(API + path, {
+          headers: {
+            Accept: 'application/vnd.github+json',
+            Authorization: 'Bearer ' + token,
+            'X-GitHub-Api-Version': '2022-11-28',
+          },
+        });
+        if (!res.ok) {
+          throw new Error(res.status + ' ' + res.statusText + ' — ' + (await res.text()));
+        }
+        return res.json();
+      }
+
+      /* --- generate ----------------------------------------------------- */
+
+      function newJobId() {
+        // strictly alphanumeric — the workflow rejects anything else
+        return (
+          'j' +
+          Date.now().toString(36) +
+          Math.random().toString(36).slice(2, 8)
+        ).replace(/[^a-z0-9]/gi, '');
+      }
+
+      async function generate() {
+        if (running) return;
+        if (!owner || !repo) {
+          fail('This page could not work out the owner/repo. Open it from GitHub Pages.');
+          return;
+        }
+        if (!token) {
+          el.tokenCard.hidden = false;
+          el.token.focus();
+          fail('Add a GitHub token first.');
+          return;
+        }
+
+        const script = el.script.value.trim();
+        const code = el.code.value;
+        localStorage.setItem(SCRIPT_KEY, el.script.value);
+        localStorage.setItem(CODE_KEY, code);
+
+        if (!script && !code.trim()) {
+          fail('Write a voiceover script or a code block first.');
+          return;
+        }
+
+        running = true;
+        artifact = null;
+        el.download.hidden = true;
+        el.preview.hidden = true;
+        el.generate.disabled = true;
+        el.generate.textContent = 'Working…';
+        setStatus('live', 'Dispatching…', 'Sending the job to GitHub Actions.');
+
+        jobId = newJobId();
+
+        try {
+          const res = await fetch(
+            API + '/repos/' + owner + '/' + repo + '/dispatches',
+            {
+              method: 'POST',
+              headers: {
+                Accept: 'application/vnd.github+json',
+                Authorization: 'Bearer ' + token,
+                'X-GitHub-Api-Version': '2022-11-28',
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                event_type: 'generate_video',
+                client_payload: { job_id: jobId, script: script, code: code },
+              }),
+            },
+          );
+
+          if (res.status !== 204) {
+            const body = await res.text();
+            fail(
+              'Dispatch returned ' + res.status + ' ' + res.statusText + '. ' + body.slice(0, 300),
+            );
+            return;
+          }
+
+          dispatchedAt = Date.now();
+          setStatus('live', 'Queued', 'Job ' + jobId + ' dispatched. Polling every 10s…');
+          poll();
+          pollTimer = setInterval(poll, POLL_MS);
+        } catch (error) {
+          fail(String(error && error.message ? error.message : error));
+        }
+      }
+
+      /* --- polling ------------------------------------------------------ */
+
+      async function poll() {
+        if (!jobId) return;
+
+        try {
+          const artifacts = await api(
+            '/repos/' + owner + '/' + repo + '/actions/artifacts?name=video-' + jobId,
+          );
+
+          if (!artifacts.total_count) {
+            await pollRuns();
+            return;
+          }
+
+          artifact = artifacts.artifacts[0];
+          stopPolling();
+          const runId = artifact.workflow_run?.id;
+          setStatus(
+            'ok',
+            'Video ready',
+            'Artifact video-' + jobId + ' (' + formatBytes(artifact.size_in_bytes) + ') is ready.',
+            {
+              href: runId
+                ? 'https://github.com/' + owner + '/' + repo + '/actions/runs/' + runId
+                : 'https://github.com/' + owner + '/' + repo + '/actions',
+              text: runId ? 'open run' : 'all runs',
+            },
+          );
+          await fetchAndPreview(artifact);
+        } catch (error) {
+          const message = String(error && error.message ? error.message : error);
+          if (/401|403/.test(message)) {
+            fail('GitHub rejected the token. ' + message);
+          } else {
+            setStatus('live', 'Still working…', message);
+          }
+        }
+      }
+
+      async function pollRuns() {
+        const runs = await api(
+          '/repos/' + owner + '/' + repo + '/actions/runs?event=repository_dispatch&per_page=30',
+        );
+        const list = runs.workflow_runs || [];
+        const mine =
+          list.find(run => String(run.name || '').includes(jobId)) ||
+          list.find(run => new Date(run.created_at).getTime() >= dispatchedAt - 120000);
+
+        if (!mine) {
+          setStatus('live', 'Queued', 'Waiting for GitHub to pick up ' + jobId + '…');
+          return;
+        }
+
+        const link = { href: mine.html_url, text: 'open run #' + mine.run_number };
+        const conclusion = mine.conclusion;
+
+        if (mine.status !== 'completed') {
+          setStatus(
+            'live',
+            mine.status === 'in_progress' ? 'Rendering…' : 'Queued',
+            'Run #' + mine.run_number + ' is ' + mine.status.replace('_', ' ') + '.',
+            link,
+          );
+          return;
+        }
+
+        if (conclusion === 'success') {
+          setStatus(
+            'live',
+            'Wrapping up…',
+            'Run #' + mine.run_number + ' succeeded, waiting for the artifact.',
+            link,
+          );
+          return;
+        }
+
+        fail('Run #' + mine.run_number + ' finished with "' + conclusion + '".', link);
+      }
+
+      /* --- download + preview ------------------------------------------- */
+
+      async function fetchAndPreview(art) {
+        setStatus('live', 'Downloading…', 'Fetching the artifact archive.');
+        el.download.hidden = true;
+
+        const res = await fetch(art.archive_download_url, {
+          headers: {
+            Accept: 'application/vnd.github+json',
+            Authorization: 'Bearer ' + token,
+            'X-GitHub-Api-Version': '2022-11-28',
+          },
+        });
+        if (!res.ok) throw new Error('artifact download ' + res.status);
+
+        const blob = await res.blob();
+        const zip = await JSZip.loadAsync(blob);
+        const entry = Object.keys(zip.files).find(
+          name => name.toLowerCase().endsWith('.mp4') && !zip.files[name].dir,
+        );
+        if (!entry) throw new Error('no .mp4 inside the artifact');
+
+        const mp4 = await zip.files[entry].async('blob');
+        const url = URL.createObjectURL(mp4);
+
+        el.preview.src = url;
+        el.preview.hidden = false;
+        el.download.hidden = false;
+        el.download.onclick = () => {
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'video-' + jobId + '.mp4';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+        };
+
+        el.generate.disabled = false;
+        el.generate.textContent = 'Generate';
+        running = false;
+        setStatus('ok', 'Done', 'Preview below — ' + entry + ' (' + formatBytes(mp4.size) + ').');
+      }
+
+      function formatBytes(bytes) {
+        if (!bytes) return '0 B';
+        const units = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.min(units.length - 1, Math.floor(Math.log(bytes) / Math.log(1024)));
+        return (bytes / Math.pow(1024, i)).toFixed(i ? 1 : 0) + ' ' + units[i];
+      }
+
+      /* --- wiring ------------------------------------------------------- */
+
+      el.token.addEventListener('change', () => {
+        token = el.token.value.trim();
+        if (token) localStorage.setItem(TOKEN_KEY, token);
+        else localStorage.removeItem(TOKEN_KEY);
+      });
+
+      el.generate.addEventListener('click', generate);
+
+      if (!owner || !repo) {
+        setStatus(
+          'error',
+          'Not configured',
+          'Owner/repo are placeholders and this is not a github.io URL, so the API endpoint is unknown.',
+        );
+      }
+    </script>
+  </body>
+</html>

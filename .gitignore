@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Revideo render output
+out/
+dist/
+
+# Generated per-job assets (created by the workflow, never committed)
+src/assets/
+narration.txt
+voiceover.wav
+final.mp4
+
+# Piper / model downloads
+piper/
+piper.tar.gz
+*.onnx
+*.onnx.json
+
+# Local / editor noise
+.env
+.env.*
+*.log
+npm-debug.log*
+.DS_Store
+.vite/
