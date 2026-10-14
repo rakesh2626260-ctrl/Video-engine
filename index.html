@@ -2087,7 +2087,8 @@
       /* =====================================================================
        * Script -> video (Revideo on GitHub Actions)
        *
-       * The SEO half is 100% client-side, but an animation cannot render in a
+       * The SEO half runs client-side by default (with a server-side
+       * fallback), but an animation cannot render in a
        * browser (headless Chromium + ffmpeg), so this half dispatches
        * .github/workflows/ultimate-youtube-engine.yml through the GitHub API:
        *   UI -> repository_dispatch -> Piper narration + Revideo typing -> MP4

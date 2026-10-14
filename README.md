@@ -2,7 +2,8 @@
 
 TrendScope is one repo that does two jobs, end to end:
 
-1. **Research** — a **100% client-side** dashboard, hosted for free on **GitHub Pages**. It
+1. **Research** — a dashboard (client-side by default, optionally server-side), hosted
+   for free on **GitHub Pages**. It
    talks straight from the browser (via `fetch()`) to the **YouTube Data API v3** for
    competitor/trending data, and to an **AI engine** you pick — either the **Google Gemini**
    API or an **[OmniRoute](https://github.com/diegosouzapw/OmniRoute)** gateway — to write a
@@ -23,6 +24,16 @@ TrendScope is one repo that does two jobs, end to end:
 https://rakesh2626260-ctrl.github.io/Video-engine/
 ```
 
+## Quick start (30 seconds)
+
+1. Open the live site.
+2. Paste a **YouTube Data API v3 key** into **Start here**.
+3. Type a topic, press **Analyze**.
+
+That is the whole setup for research. Everything else on the page — the AI engine, where the
+YouTube data is fetched from, and the GitHub token used to render a video — lives in the
+collapsed **Advanced settings** panel and is optional.
+
 ## Documentation
 
 - **[`GUIDE.md`](GUIDE.md)** — step-by-step usage guide: API keys, choosing an AI engine
@@ -30,15 +41,18 @@ https://rakesh2626260-ctrl.github.io/Video-engine/
 
 ## Features
 
-### Research (100% client-side)
+### Research (client-side by default, optionally server-side)
 
 - **Bring-your-own API keys** — a *YouTube Data API v3* key plus the key for whichever AI
   engine you pick. Everything is saved in the browser's `localStorage` only, with a
   hide/show toggle.
+- **Two data sources** — the YouTube calls normally run in your browser, but the same three
+  calls can run on **GitHub Actions** instead (`.github/workflows/youtube-research.yml`) when
+  your API key is restricted, a proxy/CORS blocks the browser, or you would rather not expose
+  the key to the page at all. The default **Auto** mode uses the browser and falls back to
+  GitHub automatically when the browser is blocked.
 - **Two AI engines** — write the blueprint with the **Google Gemini** API directly, *or* route
   it through an **OmniRoute** gateway (open-source, OpenAI-compatible; local, VPS, or cloud).
-- **Client-side data pipeline** — YouTube Data API v3 calls (`search.list`, `videos.list`,
-  `videos.list?chart=mostPopular`) straight from the browser.
 - **Trending topics** — keyword/n-gram extraction from competitor titles and descriptions.
 - **Competitor analytics** — views, likes, comments, engagement rate and views/day, ranked.
 - **SEO blueprint** — a data-driven Markdown document, written by the selected AI engine, with
@@ -75,9 +89,10 @@ https://rakesh2626260-ctrl.github.io/Video-engine/
    URL (`http://localhost:20128/v1`) and key. OmniRoute's CORS is **fail-closed**: allow this
    page's origin with `CORS_ALLOWED_ORIGINS=https://rakesh2626260-ctrl.github.io` (or
    `CORS_ALLOW_ALL=true` for a throwaway test) — see [`GUIDE.md`](GUIDE.md).
-- **GitHub token** *(only to render a video)* — a token that can dispatch workflows on this
-  repository: classic `repo` + `workflow`, or a fine-grained token with **Actions: read and
-  write**. Kept in `localStorage`; only used to send the job and fetch the artifact.
+- **GitHub token** *(only to render a video, or to use the GitHub data source)* — a token that
+  can dispatch workflows on this repository: classic `repo` + `workflow`, or a fine-grained
+  token with **Actions: read and write**. Kept in `localStorage`; only used to send the job and
+  fetch the artifact. Set it in **Advanced settings**.
 
 ## How it works
 
@@ -88,6 +103,8 @@ Browser (GitHub Pages)  ── SEO research ────────────
    ├── engine: OmniRoute ───► your OmniRoute /v1     …routed to any provider     │
    │                                                                             │
    │  fetch()  ── YouTube ───► YouTube Data API v3   competitor + trending data  │
+   │            (or, when blocked / GitHub-only:                                 │
+   │             repository_dispatch → youtube-research.yml → research.json)     │
    ▼                                                                             │
 Script + code  ── repository_dispatch ──►  GitHub Actions                        │
    │                                        ffmpeg + Piper TTS + Revideo        │
@@ -102,9 +119,11 @@ src/project.ts                        # Revideo project (1920x1080 @ 60fps)
 src/scenes/example.tsx                # the animated "typing code in an IDE" scene
 render.mjs                            # headless render entry point (renderVideo)
 scripts/patch-revideo.mjs             # removes the crashy forced --single-process flag
+scripts/research.mjs                  # server-side YouTube fetching for the research workflow
 package.json                          # Revideo dependencies for the render job
 .github/workflows/deploy-pages.yml    # auto-deploy the UI to Pages on push to main
 .github/workflows/ultimate-youtube-engine.yml  # repository_dispatch -> MP4 artifact
+.github/workflows/youtube-research.yml         # repository_dispatch -> research.json artifact
 GUIDE.md                              # step-by-step usage guide
 README.md
 ```

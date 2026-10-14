@@ -10,22 +10,47 @@ TrendScope has two halves:
 
 | Half | Where it runs | What you need |
 |---|---|---|
-| **Research** (topics, competitors, SEO blueprint) | your browser, 100% | a YouTube API key (+ optionally an AI key) |
+| **Research** (topics, competitors, SEO blueprint) | your browser, or GitHub Actions | a YouTube API key (+ optionally an AI key) |
 | **Render** (narrated animation &rarr; MP4) | GitHub Actions | a GitHub token |
 
 ---
 
 ## 0. Quick start
 
-1. Open the app and paste a **YouTube Data API v3** key into the first field.
-2. Pick a **Blueprint engine** (Gemini is simplest; OmniRoute if you already run it).
-5. Type a topic (e.g. `home espresso machines`) and click **Analyze**.
-6. Read the results, then **Copy to clipboard** or **Download Markdown report**.
-7. *(Optional)* In **Script → video**, add a **GitHub token**, click **Write script & code
-   with AI**, tweak it, then **Render video** and download the MP4.
+1. Open the app.
+2. Paste a **YouTube Data API v3** key into the **Start here** box.
+3. Type a topic (e.g. `home espresso machines`) and click **Analyze**.
+4. Read the results, then **Copy to clipboard** or **Download Markdown report**.
 
-Everything in the research half runs in your browser. Keys are stored only in this browser's
-`localStorage`.
+That is the entire setup for research. The AI engine, where the YouTube data is fetched from,
+and the GitHub token all live in the collapsed **Advanced settings** panel and are optional.
+
+5. *(Optional)* In **Script → video**, click **Write script & code with AI**, tweak the text,
+   then **Render video** and download the MP4. This one needs a GitHub token — see §6.1.
+
+Keys are stored only in this browser's `localStorage`.
+
+---
+
+## 0.1 Where the research data comes from
+
+The YouTube lookups (`search.list`, `videos.list`, `videos.list?chart=mostPopular`) can run in
+either place. Open **Advanced settings → Where to fetch the YouTube data**:
+
+| Mode | What happens | Use it when |
+|---|---|---|
+| **Auto** *(default)* | The browser fetches the data. If the browser is blocked (CORS, a proxy, or an API-key restriction that refuses a browser request), the same three calls are retried on GitHub Actions automatically. | Almost always. |
+| **This browser (instant)** | Only the browser fetches the data. | You want nothing to touch GitHub. |
+| **GitHub Actions (server-side)** | The `youtube-research` workflow fetches the data on a runner and hands back `research.json`. | Your key is IP- or HTTP-restricted, the browser is blocked, or you would rather the page never sees the key (store it as a repo secret, below). |
+
+Server-side mode needs a **GitHub token** (Advanced settings). The API key is sent in the
+dispatch payload unless you store it as a repository secret instead:
+
+> **Optional:** *Repo → Settings → Secrets and variables → Actions → New repository secret*,
+> name it `YOUTUBE_API_KEY`, and value = your YouTube key. Then server-side research works even
+> with the YouTube field empty.
+
+Server-side research takes ~20–40 seconds (a workflow run) instead of ~2 seconds.
 
 ---
 
@@ -54,6 +79,9 @@ Everything in the research half runs in your browser. Keys are stored only in th
 The AI engine writes the **SEO blueprint** and, when you continue to video, the
 **voiceover script**. Without one, the research still works (topics + competitor analytics) and
 falls back to a built-in template blueprint.
+
+> These settings live in **Advanced settings** (the collapsed panel at the bottom of the
+> *Start here* card). The default is Google Gemini.
 
 ### Option A — Google Gemini (direct API) *(simplest)*
 
@@ -104,7 +132,7 @@ process running while you use the dashboard (your computer, Android/Termux, or a
 
 ## 3. Run an analysis
 
-1. Type a **niche or keyword** into **Research a topic** (or click an example chip).
+1. Type a **niche or keyword** into **Start here** (or click an example chip).
 2. Choose a **region** (for trending videos) and a **number of competitors** (Top 10/25/50).
 3. Click **Analyze**.
 
