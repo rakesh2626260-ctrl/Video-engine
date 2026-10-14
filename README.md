@@ -1,14 +1,21 @@
-# TrendScope — Serverless YouTube SEO & Competitor Dashboard
+# TrendScope — YouTube SEO research + script-to-animation
 
-A **100% client-side** web dashboard that runs entirely in the visitor's browser and is
-hosted for free on **GitHub Pages**. There is **no backend, no server, no build step and no
-terminal setup**: the page talks directly (with `fetch()`) to the APIs you configure —
-Google's YouTube Data API and, for the AI blueprint, either the **Google Gemini** API or an
-**[OmniRoute](https://github.com/diegosouzapw/OmniRoute)** gateway.
+TrendScope is one repo that does two jobs, end to end:
 
-> Enter a niche &rarr; TrendScope pulls live YouTube data &rarr; shows trending topics and
-> competitor analytics &rarr; generates a structured Markdown SEO blueprint you can copy or
-> download.
+1. **Research** — a **100% client-side** dashboard, hosted for free on **GitHub Pages**. It
+   talks straight from the browser (via `fetch()`) to the **YouTube Data API v3** for
+   competitor/trending data, and to an **AI engine** you pick — either the **Google Gemini**
+   API or an **[OmniRoute](https://github.com/diegosouzapw/OmniRoute)** gateway — to write a
+   structured Markdown **SEO blueprint**.
+2. **Render** — turn the research into a **video**. The blueprint feeds an AI-written
+   **voiceover script + code block**; one click dispatches
+   [`.github/workflows/ultimate-youtube-engine.yml`](.github/workflows/ultimate-youtube-engine.yml),
+   which uses **Piper TTS** for narration and **Revideo** (headless Chromium + ffmpeg) to type
+   the code out in an animated editor, then returns the finished **MP4**.
+
+> Research a niche &rarr; get a data-driven blueprint &rarr; write the script &rarr; render the
+> animation. The research half is serverless; the render half runs on GitHub Actions, so you
+> still never host a server yourself.
 
 ## Live site
 
@@ -18,27 +25,37 @@ https://rakesh2626260-ctrl.github.io/Video-engine/
 
 ## Documentation
 
-- **[`GUIDE.md`](GUIDE.md)** — step-by-step usage guide: getting the API keys, choosing an AI
-  engine (Gemini or OmniRoute), running an analysis, and troubleshooting.
+- **[`GUIDE.md`](GUIDE.md)** — step-by-step usage guide: API keys, choosing an AI engine
+  (Gemini or OmniRoute), running an analysis, rendering a video, and troubleshooting.
 
 ## Features
 
-- **Bring-your-own API keys** — enter a *YouTube Data API v3* key plus the key for whichever
-  AI engine you pick. Everything is saved in the browser's `localStorage` only, with a
+### Research (100% client-side)
+
+- **Bring-your-own API keys** — a *YouTube Data API v3* key plus the key for whichever AI
+  engine you pick. Everything is saved in the browser's `localStorage` only, with a
   hide/show toggle.
-- **Two AI engines** — write the blueprint with the **Google Gemini** API directly, *or*
-  route it through an **OmniRoute** gateway (open-source, OpenAI-compatible; run it locally,
-  on a VPS, or via its cloud endpoint). Choose the engine in the UI.
+- **Two AI engines** — write the blueprint with the **Google Gemini** API directly, *or* route
+  it through an **OmniRoute** gateway (open-source, OpenAI-compatible; local, VPS, or cloud).
 - **Client-side data pipeline** — YouTube Data API v3 calls (`search.list`, `videos.list`,
-  `videos.list?chart=mostPopular`) are issued straight from the browser.
+  `videos.list?chart=mostPopular`) straight from the browser.
 - **Trending topics** — keyword/n-gram extraction from competitor titles and descriptions.
 - **Competitor analytics** — views, likes, comments, engagement rate and views/day, ranked.
-- **SEO blueprint** — a data-driven Markdown blueprint, written by the selected AI engine
-  when one is configured, with a built-in template fallback when it is not.
+- **SEO blueprint** — a data-driven Markdown document, written by the selected AI engine, with
+  a built-in template fallback when no key is configured.
 - **Utility actions** — *Copy to clipboard* and *Download Markdown report*.
-- **Loading + error states** — step-by-step progress while data is fetched.
 
-## Getting the API keys
+### Render (GitHub Actions)
+
+- **AI script from research** — one button turns the blueprint into a voiceover script plus an
+  on-screen code block (editable before you render).
+- **Narrated animation** — Piper TTS narrates the script; Revideo types the code out in an
+  animated IDE window at 1920×1080⁄60fps.
+- **In-page preview + download** — the workflow uploads the MP4 as an artifact, which the page
+  fetches and unzips, so you can watch it inline or download `trendscope-<job>.mp4`.
+- **Live status** — dispatching, queued, rendering, ready/failed, with a link to the run.
+
+## Getting the keys
 
 1. **YouTube Data API v3** — in the
    [Google Cloud console](https://console.cloud.google.com/apis/library/youtube.googleapis.com),
@@ -50,47 +67,55 @@ https://rakesh2626260-ctrl.github.io/Video-engine/
 3. **OmniRoute** *(optional alternative)* — run the open-source gateway and use its API key:
 
    ```bash
-   npx omniroute            # starts the gateway + dashboard on http://localhost:20128
+   npx omniroute            # starts the gateway on http://localhost:20128
    ```
 
-   In the OmniRoute dashboard, connect at least one provider (e.g. Gemini, Groq, a free tier),
-   then copy the key from **Dashboard → Endpoints**. Back in TrendScope, set the engine to
-   **OmniRoute gateway**, enter the base URL (`http://localhost:20128/v1` by default) and the
-   key, and pick a model — `auto` lets OmniRoute choose, or use a provider-prefixed id such as
-   `gemini/gemini-2.5-flash`.
+   Connect at least one provider in the OmniRoute dashboard, copy the key from
+   **Dashboard → Endpoints**, then in TrendScope choose **OmniRoute gateway** and set the base
+   URL (`http://localhost:20128/v1`) and key. OmniRoute's CORS is **fail-closed**: allow this
+   page's origin with `CORS_ALLOWED_ORIGINS=https://rakesh2626260-ctrl.github.io` (or
+   `CORS_ALLOW_ALL=true` for a throwaway test) — see [`GUIDE.md`](GUIDE.md).
+- **GitHub token** *(only to render a video)* — a token that can dispatch workflows on this
+  repository: classic `repo` + `workflow`, or a fine-grained token with **Actions: read and
+  write**. Kept in `localStorage`; only used to send the job and fetch the artifact.
 
 ## How it works
 
 ```
-Browser (GitHub Pages)
-   │  fetch()
-   ├──────────────────────────► YouTube Data API v3   competitor + trending data
-   │
-   ├── engine: Gemini ────────► Google Gemini API      SEO blueprint (Markdown)
-   │
-   └── engine: OmniRoute ─────► your OmniRoute /v1     …routed to any connected model
+Browser (GitHub Pages)  ── SEO research ────────────────────────────────────────┐
+   │  fetch()                                                                    │
+   ├── engine: Gemini ──────► Google Gemini API      blueprint (Markdown)        │
+   ├── engine: OmniRoute ───► your OmniRoute /v1     …routed to any provider     │
+   │                                                                             │
+   │  fetch()  ── YouTube ───► YouTube Data API v3   competitor + trending data  │
+   ▼                                                                             │
+Script + code  ── repository_dispatch ──►  GitHub Actions                        │
+   │                                        ffmpeg + Piper TTS + Revideo        │
+   └──◄──── workflow artifact (MP4) ◄──────── final.mp4 ◄────────────────────────┘
 ```
-
-- No build step, no bundler, no runtime dependencies — a single `index.html`.
-- Markdown is rendered by a tiny built-in renderer, so no third-party CDN is required.
-- API keys live only in the user's browser.
 
 ## Project layout
 
 ```
-index.html                          # the whole dashboard (HTML + CSS + JS)
-GUIDE.md                            # step-by-step usage guide
-.nojekyll                           # tell GitHub Pages not to run Jekyll
-.github/workflows/deploy-pages.yml  # auto-deploy to Pages on push to main
+index.html                            # the whole app UI (research + render controls)
+src/project.ts                        # Revideo project (1920x1080 @ 60fps)
+src/scenes/example.tsx                # the animated "typing code in an IDE" scene
+render.mjs                            # headless render entry point (renderVideo)
+scripts/patch-revideo.mjs             # removes the crashy forced --single-process flag
+package.json                          # Revideo dependencies for the render job
+.github/workflows/deploy-pages.yml    # auto-deploy the UI to Pages on push to main
+.github/workflows/ultimate-youtube-engine.yml  # repository_dispatch -> MP4 artifact
+GUIDE.md                              # step-by-step usage guide
 README.md
 ```
 
 ## Deployment
 
-Publishing is automatic. Push to `main` and the
-[`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml) workflow builds
-and deploys the static site using GitHub's official Pages actions. You can also run it
-manually from the **Actions** tab (`workflow_dispatch`).
+- **The dashboard** publishes automatically: push to `main` and
+  [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml) deploys the static
+  site with GitHub's official Pages actions. You can also run it from the **Actions** tab.
+- **The video workflow** needs no setup: it runs when the page dispatches a
+  `generate_video` event. (Only the repository_dispatch trigger, so pushes never render.)
 
 ## OmniRoute notes
 
@@ -98,22 +123,22 @@ manually from the **Actions** tab (`workflow_dispatch`).
   (`POST {base URL}/chat/completions` with an `Authorization: Bearer <key>` header).
 - A local OmniRoute runs on plain `http://localhost:20128/v1`. Browsers treat `localhost` as a
   *potentially trustworthy* origin, so an HTTPS GitHub Pages page may call it without a mixed-
-  content error — but the gateway must also send permissive **CORS** headers for this page's
-  origin, otherwise the request is blocked. If it is blocked, set the engine back to Gemini, or
-  put OmniRoute behind an HTTPS reverse proxy on a domain that allows CORS.
+  content error — but the gateway must send permissive **CORS** headers for this page's origin,
+  or the request is blocked (OmniRoute's CORS is fail-closed: set `CORS_ALLOWED_ORIGINS`).
 - `auto` routes across whatever providers you connected; a provider-prefixed id (for example
   `gemini/gemini-2.5-flash`) pins the request to one model.
 
 ## Security notes
 
-- Keys are stored unencrypted in `localStorage` — that is a deliberate trade-off for a
-  serverless app. Use restricted keys and rotate them if a shared device is a concern.
+- Keys and tokens are stored unencrypted in `localStorage` — a deliberate trade-off for a
+  serverless app. Use **restricted** YouTube keys, **fine-grained** GitHub tokens limited to
+  this repository (Actions: write), and rotate them if a shared device is a concern.
 - Never hard-code a key into `index.html`; the repository is public.
 - YouTube and Gemini calls go over HTTPS directly to Google. An OmniRoute call goes directly to
-  the base URL you supply; nothing is relayed through any third-party server.
+  the base URL you supply. Rendering happens inside your own repository's Actions runs only.
 
 ## License
 
 Provided as-is for personal use. Respect the terms of service and quotas of the YouTube Data
 API, the Gemini API and any OmniRoute upstream providers you connect. OmniRoute itself is MIT
-licensed.
+licensed. Revideo and Piper are used under their respective open-source licenses.

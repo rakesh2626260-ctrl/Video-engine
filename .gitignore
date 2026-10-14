@@ -1,5 +1,22 @@
-# Static dashboard: no backend, no build, no dependencies.
-# Only local/editor noise and secrets belong here.
+# Dependencies (Revideo render job)
+node_modules/
+
+# Revideo render output
+out/
+dist/
+.vite/
+
+# Generated per-job assets (created by the workflow, never committed)
+src/assets/
+narration.txt
+voiceover.wav
+final.mp4
+
+# Piper / model downloads
+piper/
+piper.tar.gz
+*.onnx
+*.onnx.json
 
 # Secrets / local environment
 .env

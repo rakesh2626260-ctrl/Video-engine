@@ -6,9 +6,9 @@
     <meta name="color-scheme" content="dark" />
     <meta
       name="description"
-      content="TrendScope - a 100% client-side YouTube SEO and competitor research dashboard powered by the YouTube Data API v3 and an AI engine of your choice (Google Gemini or an OmniRoute gateway). No backend, no server, no terminal."
+      content="TrendScope - research a YouTube niche in your browser, then turn the result into a narrated animation. Client-side SEO dashboard (YouTube Data API v3 + Gemini or OmniRoute) with a Revideo render pipeline on GitHub Actions."
     />
-    <title>TrendScope - Serverless YouTube SEO &amp; Competitor Dashboard</title>
+    <title>TrendScope - YouTube SEO research &amp; script-to-animation</title>
     <style>
       :root {
         --bg: #0b0f17;
@@ -645,6 +645,91 @@
         transform: translateY(0);
       }
 
+      /* ---------- script -> video ---------- */
+      textarea.code-input {
+        font-family: var(--mono);
+        font-size: 0.86rem;
+        line-height: 1.55;
+        tab-size: 2;
+        white-space: pre;
+        overflow-wrap: normal;
+        overflow-x: auto;
+      }
+      .render-status {
+        display: flex;
+        gap: 11px;
+        align-items: flex-start;
+        margin-top: 16px;
+        padding: 12px 14px;
+        border: 1px solid var(--border-soft);
+        border-radius: var(--radius-sm);
+        background: var(--panel-2);
+      }
+      .render-status .dot {
+        width: 10px;
+        height: 10px;
+        flex: 0 0 auto;
+        margin-top: 5px;
+        border-radius: 50%;
+        background: var(--faint);
+      }
+      .render-status .dot.live {
+        background: var(--accent);
+        animation: pulse 1.4s ease-out infinite;
+      }
+      .render-status .dot.ok {
+        background: var(--ok);
+      }
+      .render-status .dot.error {
+        background: var(--err);
+      }
+      .render-title {
+        margin: 0;
+        font-weight: 600;
+        font-size: 0.92rem;
+      }
+      .render-detail {
+        margin: 2px 0 0;
+        color: var(--muted);
+        font-size: 0.82rem;
+        overflow-wrap: anywhere;
+      }
+      .render-detail a {
+        color: var(--accent);
+      }
+      #render-result {
+        margin-top: 14px;
+      }
+      #render-result video {
+        width: 100%;
+        max-height: 480px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        background: #000;
+      }
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(79, 140, 255, 0.55);
+        }
+        70% {
+          box-shadow: 0 0 0 11px rgba(79, 140, 255, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(79, 140, 255, 0);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .render-status .dot.live {
+          animation: none;
+        }
+      }
+
+      /* Keep the `hidden` attribute authoritative even on flex/inline-flex
+         elements (status box, pills, settings panels). */
+      [hidden] {
+        display: none !important;
+      }
+
       .sr-only {
         position: absolute;
         width: 1px;
@@ -672,10 +757,10 @@
           </span>
           <div>
             <h1>TrendScope</h1>
-            <p>Serverless YouTube SEO &amp; competitor research</p>
+            <p>YouTube SEO research &rarr; script &rarr; animation</p>
           </div>
         </div>
-        <span class="pill"><span class="dot"></span> 100% client-side &middot; no backend</span>
+        <span class="pill"><span class="dot"></span> Client-side research &middot; render via GitHub Actions</span>
       </header>
 
       <!-- ---------------- configuration ---------------- -->
@@ -877,9 +962,91 @@
         </article>
       </section>
 
+      <!-- ---------------- script -> video ---------------- -->
+      <section class="card" id="video-card" aria-labelledby="video-title">
+        <h2 id="video-title">Script &rarr; video</h2>
+        <p class="sub">
+          Turns your narration and a code block into an MP4: GitHub Actions narrates the
+          <strong>voiceover script</strong> with Piper TTS and types the <strong>code block</strong>
+          out in an animated editor (Revideo), then hands the finished file back here.
+        </p>
+
+        <div class="field" style="max-width: 560px">
+          <label for="gh-token">GitHub token <span class="req">required to render</span></label>
+          <div class="input-group">
+            <input
+              id="gh-token"
+              type="password"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="ghp_… or github_pat_…"
+            />
+            <button
+              class="toggle"
+              type="button"
+              data-toggle="gh-token"
+              aria-label="Show or hide the GitHub token"
+              aria-pressed="false"
+            ></button>
+          </div>
+          <p class="hint">
+            Kept in this browser only (<code>localStorage</code>). It only needs to dispatch
+            workflows on <strong id="repo-name">this repository</strong> — classic
+            <code>repo</code> + <code>workflow</code>, or a fine-grained token with
+            <em>Actions: read and write</em>.
+          </p>
+        </div>
+
+        <div class="grid" style="margin-top: 14px">
+          <div class="field">
+            <label for="video-script">Voiceover script</label>
+            <textarea
+              id="video-script"
+              rows="7"
+              spellcheck="false"
+              placeholder="In this video we build…"
+            ></textarea>
+          </div>
+          <div class="field">
+            <label for="video-code">Code block <span class="opt">typed on screen</span></label>
+            <textarea
+              id="video-code"
+              class="code-input"
+              rows="7"
+              spellcheck="false"
+              wrap="off"
+              placeholder="export function greet(name: string) { … }"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="row-actions">
+          <button class="btn btn-primary" type="button" id="render-video">Render video</button>
+          <button class="btn" type="button" id="write-script">Write script &amp; code with AI</button>
+        </div>
+
+        <p class="hint" id="dispatch-endpoint"></p>
+
+        <div class="render-status" id="render-status" hidden aria-live="polite">
+          <span class="dot" id="render-dot" aria-hidden="true"></span>
+          <div>
+            <p class="render-title" id="render-title">Idle</p>
+            <p class="render-detail" id="render-detail"></p>
+          </div>
+        </div>
+
+        <div id="render-result" hidden>
+          <video id="render-preview" controls playsinline></video>
+          <div class="row-actions">
+            <button class="btn" type="button" id="download-video">Download MP4</button>
+          </div>
+        </div>
+      </section>
+
       <footer>
         <p>
-          TrendScope runs entirely in your browser. No backend, no proxies, no terminal required.
+          SEO research runs entirely in your browser. The video render runs on GitHub Actions
+          (ffmpeg + Piper + Revideo) — no server of your own.
         </p>
         <p>
           Data &copy; YouTube Data API v3 &middot; Blueprint &copy; the selected AI engine
@@ -890,6 +1057,7 @@
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script type="module">
       /* =====================================================================
        * TrendScope - client-side YouTube SEO & competitor dashboard
@@ -1030,11 +1198,12 @@
         $("max-results").addEventListener("change", () => store.set(LS.max, $("max-results").value));
 
         $("clear-keys").addEventListener("click", () => {
-          if (!confirm("Remove the saved API keys from this browser?")) return;
-          [LS.yt, LS.gemini, LS.omniKey].forEach((k) => store.set(k, ""));
+          if (!confirm("Remove the saved YouTube, AI and GitHub keys from this browser?")) return;
+          [LS.yt, LS.gemini, LS.omniKey, LS_VIDEO.token].forEach((k) => store.set(k, ""));
           $("yt-key").value = "";
           $("gemini-key").value = "";
           $("omniroute-key").value = "";
+          $("gh-token").value = "";
           toastMessage("Saved keys cleared");
         });
       }
@@ -1819,11 +1988,368 @@
         toastMessage("Markdown report downloaded");
       }
 
+      /* =====================================================================
+       * Script -> video (Revideo on GitHub Actions)
+       *
+       * The SEO half is 100% client-side, but an animation cannot render in a
+       * browser (headless Chromium + ffmpeg), so this half dispatches
+       * .github/workflows/ultimate-youtube-engine.yml through the GitHub API:
+       *   UI -> repository_dispatch -> Piper narration + Revideo typing -> MP4
+       * The MP4 comes back as a workflow artifact, which we unzip in-page.
+       * ===================================================================== */
+      const GH_API = "https://api.github.com";
+      const RENDER_POLL_MS = 10000;
+
+      const LS_VIDEO = {
+        token: "trendscope.githubToken",
+        script: "trendscope.videoScript",
+        code: "trendscope.videoCode",
+      };
+
+      const FALLBACK_CODE = [
+        "// TrendScope",
+        "export async function render(input: string) {",
+        "  const frames = await build(input); // 1920x1080 @ 60fps",
+        "  return frames;",
+        "}",
+      ].join("\n");
+
+      /** owner/repo of this Pages site, derived from <user>.github.io/<repo>/. */
+      function detectRepo() {
+        const host = location.hostname;
+        if (host.endsWith(".github.io")) {
+          const owner = host.split(".")[0];
+          const repo = decodeURIComponent(location.pathname.split("/").filter(Boolean)[0] || "");
+          if (owner && repo) return { owner, repo };
+        }
+        return { owner: "", repo: "" };
+      }
+      const gh = detectRepo();
+
+      async function ghApi(path, options = {}) {
+        const res = await fetch(GH_API + path, {
+          ...options,
+          headers: {
+            Accept: "application/vnd.github+json",
+            Authorization: "Bearer " + $("gh-token").value.trim(),
+            "X-GitHub-Api-Version": "2022-11-28",
+            ...(options.headers || {}),
+          },
+        });
+        if (!res.ok) {
+          const body = await res.text().catch(() => "");
+          throw new Error(`${res.status} ${res.statusText}${body ? " — " + body.slice(0, 300) : ""}`);
+        }
+        if (res.status === 204) return null;
+        return res.json();
+      }
+
+      function newJobId() {
+        // strictly alphanumeric: the workflow rejects anything else
+        return ("j" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8)).replace(
+          /[^a-z0-9]/gi,
+          "",
+        );
+      }
+
+      let renderJob = null;
+      let renderTimer = null;
+      let renderBusy = false;
+
+      function stopRenderPolling() {
+        if (renderTimer) clearInterval(renderTimer);
+        renderTimer = null;
+      }
+
+      function resetRenderButton() {
+        renderBusy = false;
+        $("render-video").disabled = false;
+        $("render-video").textContent = "Render video";
+      }
+
+      function setRenderStatus(state, title, detail, link) {
+        $("render-status").hidden = false;
+        $("render-dot").className = "dot" + (state ? " " + state : "");
+        $("render-title").textContent = title;
+        const d = $("render-detail");
+        d.textContent = detail || "";
+        if (link) {
+          d.append(
+            " ",
+            el("a", { href: link.href, target: "_blank", rel: "noopener noreferrer", textContent: link.text }),
+          );
+        }
+      }
+
+      function formatBytes(bytes) {
+        if (!bytes) return "0 B";
+        const units = ["B", "KB", "MB", "GB"];
+        const i = Math.min(units.length - 1, Math.floor(Math.log(bytes) / Math.log(1024)));
+        return (bytes / Math.pow(1024, i)).toFixed(i ? 1 : 0) + " " + units[i];
+      }
+
+      async function renderVideo() {
+        const { owner, repo } = gh;
+        if (!owner || !repo) {
+          toastMessage("Open this page from its GitHub Pages URL to render.");
+          return;
+        }
+        if (renderBusy) return;
+        if (!$("gh-token").value.trim()) {
+          $("gh-token").focus();
+          toastMessage("Add a GitHub token first.");
+          return;
+        }
+
+        const script = $("video-script").value.trim();
+        const code = $("video-code").value;
+        store.set(LS_VIDEO.script, $("video-script").value);
+        store.set(LS_VIDEO.code, code);
+        if (!script && !code.trim()) {
+          toastMessage("Add a voiceover script or a code block first.");
+          return;
+        }
+
+        stopRenderPolling();
+        renderBusy = true;
+        $("render-video").disabled = true;
+        $("render-video").textContent = "Working…";
+        $("render-result").hidden = true;
+
+        renderJob = newJobId();
+        setRenderStatus("live", "Dispatching…", "Sending the job to GitHub Actions.");
+
+        try {
+          await ghApi(`/repos/${owner}/${repo}/dispatches`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              event_type: "generate_video",
+              client_payload: { job_id: renderJob, script, code },
+            }),
+          });
+        } catch (err) {
+          stopRenderPolling();
+          resetRenderButton();
+          setRenderStatus("error", "Dispatch failed", String(err.message || err));
+          return;
+        }
+
+        setRenderStatus("live", "Queued", `Job ${renderJob} sent. Checking every 10 seconds…`);
+        pollRender();
+        renderTimer = setInterval(pollRender, RENDER_POLL_MS);
+      }
+
+      async function pollRender() {
+        if (!renderJob) return;
+        const base = `/repos/${gh.owner}/${gh.repo}`;
+        try {
+          const artifacts = await ghApi(`${base}/actions/artifacts?name=video-${renderJob}`);
+          if (!artifacts.total_count) {
+            await pollRenderRuns();
+            return;
+          }
+          stopRenderPolling();
+          const artifact = artifacts.artifacts.find((a) => !a.expired) || artifacts.artifacts[0];
+          setRenderStatus(
+            "ok",
+            "Video ready",
+            `Artifact video-${renderJob} (${formatBytes(artifact.size_in_bytes)}).`,
+          );
+          await fetchArtifact(artifact);
+        } catch (err) {
+          const message = String(err.message || err);
+          if (/401|403/.test(message)) {
+            stopRenderPolling();
+            resetRenderButton();
+            setRenderStatus("error", "GitHub rejected the token", message);
+          } else {
+            setRenderStatus("live", "Still working…", message);
+          }
+        }
+      }
+
+      async function pollRenderRuns() {
+        const data = await ghApi(
+          `/repos/${gh.owner}/${gh.repo}/actions/runs?event=repository_dispatch&per_page=30`,
+        );
+        const runs = data.workflow_runs || [];
+        const mine = runs.find((r) => String(r.name || "").includes(renderJob));
+        if (!mine) {
+          setRenderStatus("live", "Queued…", "Waiting for GitHub Actions to start the job.");
+          return;
+        }
+        const open = { href: mine.html_url, text: "open run" };
+        if (mine.status !== "completed") {
+          setRenderStatus("live", "Rendering…", `Run #${mine.run_number} is ${mine.status}.`, open);
+          return;
+        }
+        if (mine.conclusion === "success") {
+          setRenderStatus("live", "Finishing…", "Render succeeded; downloading the video.", open);
+          return;
+        }
+        stopRenderPolling();
+        resetRenderButton();
+        setRenderStatus("error", "Render failed", `Run #${mine.run_number}: ${mine.conclusion}.`, {
+          href: mine.html_url,
+          text: "open run",
+        });
+      }
+
+      async function fetchArtifact(artifact) {
+        const res = await fetch(artifact.archive_download_url, {
+          headers: {
+            Accept: "application/vnd.github+json",
+            Authorization: "Bearer " + $("gh-token").value.trim(),
+            "X-GitHub-Api-Version": "2022-11-28",
+          },
+        });
+        if (!res.ok) {
+          throw new Error(`Artifact download failed (${res.status} ${res.statusText}).`);
+        }
+        if (typeof JSZip === "undefined") {
+          throw new Error("The JSZip library did not load — check your connection.");
+        }
+        const zip = await JSZip.loadAsync(await res.blob());
+        const name = Object.keys(zip.files).find(
+          (n) => n.toLowerCase().endsWith(".mp4") && !zip.files[n].dir,
+        );
+        if (!name) throw new Error("No .mp4 found inside the artifact.");
+        const mp4 = await zip.files[name].async("blob");
+        const url = URL.createObjectURL(mp4);
+
+        $("render-preview").src = url;
+        $("render-result").hidden = false;
+        $("download-video").onclick = () => {
+          const a = el("a", { href: url, download: `trendscope-${renderJob}.mp4` });
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+        };
+        resetRenderButton();
+        setRenderStatus("ok", "Done", `Preview below — ${name} (${formatBytes(mp4.size)}).`);
+        $("render-result").scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+
+      /* ---------------- AI: research -> script ---------------- */
+      function buildScriptPrompt(topic, report) {
+        const lines = [
+          "You are a YouTube scriptwriter. Write a short voiceover and a companion code block.",
+          "",
+        ];
+        if (report) {
+          lines.push(`Topic: ${report.query}`);
+          lines.push(`Region: ${report.region}`);
+          lines.push(`Trending keywords: ${report.topics.slice(0, 12).map((t) => t.term).join(", ")}`);
+          lines.push("Top competitor titles:");
+          report.videos.slice(0, 8).forEach((v) => lines.push(`  - ${v.title} (${v.channel})`));
+        } else {
+          lines.push(`Topic: ${topic}`);
+        }
+        lines.push(
+          "",
+          "Rules:",
+          "- Voiceover: 150-220 words, plain first-person narration, no stage directions.",
+          "- Code: 6-16 lines, valid, on-topic, ready to be typed on screen.",
+          "- Reply with ONLY the two labels below and their content:",
+          "",
+          "SCRIPT:",
+          "<the voiceover>",
+          "",
+          "CODE:",
+          "<the code>",
+        );
+        return lines.join("\n");
+      }
+
+      function stripFence(block) {
+        const m = String(block || "").match(/^\s*```[\w-]*\s*\n?([\s\S]*?)\n?```\s*$/);
+        return (m ? m[1] : String(block || "")).trim();
+      }
+
+      function parseScriptOutput(text) {
+        const raw = String(text || "").trim();
+        const match = raw.match(/SCRIPT:\s*([\s\S]*?)\s*CODE:\s*([\s\S]*)$/i);
+        let script = stripFence(match ? match[1] : raw);
+        let code = match ? stripFence(match[2]) : "";
+        if (!code) {
+          const fenced = raw.match(/```[\w-]*\s*\n([\s\S]*?)```/);
+          if (fenced) code = fenced[1].trim();
+        }
+        return { script, code };
+      }
+
+      async function writeScriptWithAI() {
+        const topic = currentReport?.query || $("query").value.trim();
+        if (!topic) {
+          toastMessage("Research a topic first (or type one in the search box).");
+          $("query").focus();
+          return;
+        }
+
+        const useOmni = $("ai-provider").value === "omniroute";
+        const geminiKey = $("gemini-key").value.trim();
+        const model = $("gemini-model").value;
+        const omniUrl = $("omniroute-url").value.trim() || DEFAULT_OMNIROUTE_URL;
+        const omniKey = $("omniroute-key").value.trim();
+        const omniModel = $("omniroute-model").value.trim() || "auto";
+        if (useOmni ? !omniUrl : !geminiKey) {
+          toastMessage(
+            useOmni
+              ? "Add the OmniRoute base URL (and key) first."
+              : "Add a Gemini API key first, or switch the engine to OmniRoute.",
+          );
+          return;
+        }
+
+        const btn = $("write-script");
+        btn.disabled = true;
+        btn.textContent = "Writing…";
+        try {
+          const prompt = buildScriptPrompt(topic, currentReport);
+          const text = useOmni
+            ? await generateOmniRouteBlueprint(prompt, omniUrl, omniKey, omniModel)
+            : await generateBlueprint(prompt, geminiKey, model);
+          const { script, code } = parseScriptOutput(text);
+          $("video-script").value = script;
+          if (code) $("video-code").value = code;
+          store.set(LS_VIDEO.script, script);
+          store.set(LS_VIDEO.code, $("video-code").value);
+          toastMessage("Script ready — edit it if you like, then Render.");
+        } catch (err) {
+          toastMessage("Could not write the script: " + (err.message || err));
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Write script & code with AI";
+        }
+      }
+
+      /* ---------------- video wiring ---------------- */
+      function bootVideo() {
+        $("gh-token").value = store.get(LS_VIDEO.token);
+        $("video-script").value = store.get(LS_VIDEO.script);
+        $("video-code").value = store.get(LS_VIDEO.code, FALLBACK_CODE);
+        $("repo-name").textContent =
+          gh.owner && gh.repo ? `${gh.owner}/${gh.repo}` : "your repository";
+        $("dispatch-endpoint").textContent =
+          gh.owner && gh.repo
+            ? `POST ${GH_API}/repos/${gh.owner}/${gh.repo}/dispatches`
+            : "Open this page from its GitHub Pages URL to enable rendering.";
+
+        $("gh-token").addEventListener("input", (e) => store.set(LS_VIDEO.token, e.target.value.trim()));
+        $("video-script").addEventListener("input", (e) => store.set(LS_VIDEO.script, e.target.value));
+        $("video-code").addEventListener("input", (e) => store.set(LS_VIDEO.code, e.target.value));
+
+        $("render-video").addEventListener("click", renderVideo);
+        $("write-script").addEventListener("click", writeScriptWithAI);
+      }
+
       /* ---------------- boot ---------------- */
       function boot() {
         loadConfig();
         wireToggles();
         wireConfig();
+        bootVideo();
 
         $("examples").addEventListener("click", (e) => {
           const chip = e.target.closest(".chip");

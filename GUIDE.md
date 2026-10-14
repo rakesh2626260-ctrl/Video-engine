@@ -1,21 +1,31 @@
 # TrendScope — Usage Guide
 
-A practical, step-by-step guide to using the dashboard. No coding required.
+A practical, step-by-step guide to the dashboard: **research a niche**, then **render an
+animation** from it. No coding required.
 
 - **App:** https://rakesh2626260-ctrl.github.io/Video-engine/
 - **Repo:** https://github.com/rakesh2626260-ctrl/Video-engine
 
+TrendScope has two halves:
+
+| Half | Where it runs | What you need |
+|---|---|---|
+| **Research** (topics, competitors, SEO blueprint) | your browser, 100% | a YouTube API key (+ optionally an AI key) |
+| **Render** (narrated animation &rarr; MP4) | GitHub Actions | a GitHub token |
+
 ---
 
-## 0. First 60 seconds (quick start)
+## 0. Quick start
 
-1. Open the app.
-2. Paste a **YouTube Data API v3** key into the first field.
-3. Pick a **Blueprint engine** (Gemini is simplest; OmniRoute if you already run it).
-4. Type a topic (e.g. `home espresso machines`) and click **Analyze**.
-5. Read the results, then **Copy to clipboard** or **Download Markdown report**.
+1. Open the app and paste a **YouTube Data API v3** key into the first field.
+2. Pick a **Blueprint engine** (Gemini is simplest; OmniRoute if you already run it).
+5. Type a topic (e.g. `home espresso machines`) and click **Analyze**.
+6. Read the results, then **Copy to clipboard** or **Download Markdown report**.
+7. *(Optional)* In **Script → video**, add a **GitHub token**, click **Write script & code
+   with AI**, tweak it, then **Render video** and download the MP4.
 
-Everything runs in your browser. Keys are stored only in this browser's `localStorage`.
+Everything in the research half runs in your browser. Keys are stored only in this browser's
+`localStorage`.
 
 ---
 
@@ -39,11 +49,11 @@ Everything runs in your browser. Keys are stored only in this browser's `localSt
 
 ---
 
-## 2. Choose a blueprint engine
+## 2. Choose an AI engine
 
-The dashboard needs an AI engine only to write the **SEO blueprint**. It always builds topics
-and competitor analytics on its own, and it always has a built-in template blueprint as a
-fallback.
+The AI engine writes the **SEO blueprint** and, when you continue to video, the
+**voiceover script**. Without one, the research still works (topics + competitor analytics) and
+falls back to a built-in template blueprint.
 
 ### Option A — Google Gemini (direct API) *(simplest)*
 
@@ -115,7 +125,7 @@ blueprint.
 
 ---
 
-## 5. Export
+## 5. Export the research
 
 - **Copy to clipboard** — copies the full Markdown report.
 - **Download Markdown report** — saves `seo-blueprint-<topic>-<date>.md`.
@@ -124,33 +134,95 @@ Both include the topics, the competitor table and the blueprint.
 
 ---
 
-## 6. Settings & privacy
+## 6. Render the video (Script → video)
 
-- **Hide/show toggles** (the eye icon) reveal or mask each key field.
-- Keys and preferences are stored in **`localStorage`** under `trendscope.*`.
-- **Clear saved keys** wipes the YouTube and AI keys from this browser.
-- Nothing is sent anywhere except to the API you configured (Google, and/or your OmniRoute
-  gateway). There is no TrendScope server.
+The **Script → video** card turns your narration into an MP4: GitHub Actions narrates the
+**voiceover script** with Piper TTS and types the **code block** out in an animated editor
+(Revideo), then the file comes back into the page.
+
+### 6.1 Create a GitHub token
+
+The page dispatches the video workflow through the GitHub API, so it needs a token that can
+run Actions on this repository.
+
+- **Fine-grained (recommended):** GitHub → **Settings → Developer settings → Personal access
+  tokens → Fine-grained tokens**. Limit *Repository access* to
+  `rakesh2626260-ctrl/Video-engine`, and give it **Actions: Read and write**.
+- **Classic:** give it the `repo` and `workflow` scopes.
+
+Paste it into **GitHub token** (eye icon to reveal/mask). It is kept only in this browser's
+`localStorage`.
+
+### 6.2 Write (or paste) the script
+
+- Click **Write script &amp; code with AI** to generate a voiceover script and a code block from
+  your research. (Requires an AI engine from §2 and a completed analysis, or at least a topic in
+  the search box.)
+- Or type/paste your own **voiceover script** and **code block**. The code block is what gets
+  typed on screen; the voiceover is what gets spoken.
+
+### 6.3 Render
+
+1. Click **Render video**.
+2. Watch the status: *Dispatching → Queued → Rendering → Done*. A render typically takes a
+   few minutes (system deps + Piper + Revideo are set up per run).
+3. When it finishes, the **preview** appears inline and **Download MP4** saves the file. The
+   run also stays downloadable from the **Actions** tab as an artifact
+   (`video-<job id>`), retained for **30 days**.
 
 ---
 
-## 7. Troubleshooting
+## 7. Settings & privacy
+
+- **Hide/show toggles** (the eye icon) reveal or mask each key field.
+- Keys and preferences are stored in **`localStorage`** under `trendscope.*`.
+- **Clear saved keys** wipes the YouTube, AI and GitHub keys from this browser.
+- Research sends data only to the APIs you configured (Google and/or your OmniRoute gateway).
+  Rendering runs inside your own repository's GitHub Actions. There is no TrendScope server.
+
+---
+
+## 8. Troubleshooting
+
+### Research
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | `403` / "quota exceeded" | Daily YouTube quota used up, or API not enabled | Wait for the daily reset, or check the API is enabled in Cloud Console |
 | `403` / "API key not valid" or "referrer blocked" | Key restrictions don't allow this site | Add `https://rakesh2626260-ctrl.github.io/*` under **Websites** |
 | "YouTube API key required" | The YouTube field is empty | Paste your YouTube Data API v3 key |
-| Blueprint shows the built-in template | No AI key, or the AI request failed | Check the notice above the blueprint; add/verify your key or engine URL |
-| "OmniRoute request failed … CORS" | Gateway not running, wrong URL, or CORS blocked | Start OmniRoute, verify the base URL ends in `/v1`, and allow this origin |
-| "model not found" from OmniRoute | Unknown model/route id | Use `auto`, or pick an id your gateway lists |
-| No topics / empty table | Very obscure query returned no results | Try a broader keyword |
+| Blueprint shows the built-in template | No AI key, or the AI request failed | Check the notice above the blueprint; add/verify your key or OmniRoute |
+| OmniRoute network error | Gateway stopped, wrong URL, or CORS | Keep OmniRoute running, use `…/v1`, and allow `https://rakesh2626260-ctrl.github.io` |
+
+### Rendering
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| "Open this page from its GitHub Pages URL…" | Owner/repo couldn't be derived (e.g. opened from a local file) | Use the Pages URL: `https://rakesh2626260-ctrl.github.io/Video-engine/` |
+| "Add a GitHub token first" | Token field empty | Create a token (§6.1) and paste it |
+| `401`/`403` "GitHub rejected the token" | Token lacks **Actions: write**, or expired | Make a new fine-grained token with **Actions: Read and write** on this repo |
+| Stuck on "Queued…" | The workflow never started | Check the **Actions** tab; repository_dispatch only runs if `ultimate-youtube-engine.yml` exists on `main` |
+| Run fails at Revideo/Chromium | Transient CI/Chromium issue | Re-run **Render video**; if it persists, open the run log and re-run the failed job |
+| Render succeeds but no download | Artifact expired (30 days) or was deleted | Re-run a render |
+| Video is silent | Narration text was empty | Add a voiceover script and render again |
 
 ---
 
-## 8. Deploying your own copy
+## 9. How it works (for the curious)
 
-Fork the repo (or copy `index.html`), then push to `main`. The bundled
-[`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml) publishes it to
-GitHub Pages automatically. Enable **Settings → Pages → Build and deployment → Source: GitHub
-Actions** once.
+```
+Browser (GitHub Pages)
+   │  fetch()
+   ├──────────────────────────► YouTube Data API v3   competitor + trending data
+   ├── engine: Gemini ────────► Google Gemini API      SEO blueprint + script
+   └── engine: OmniRoute ─────► your OmniRoute /v1     …routed to any connected model
+
+"Render video"
+   └── repository_dispatch ──► GitHub Actions
+                                 ffmpeg + Piper TTS + Revideo → final.mp4
+        ◄── workflow artifact (zip with the MP4), unzipped in the page
+```
+
+- The research UI is a single `index.html` — no build step, no bundler.
+- The render job lives in `.github/workflows/ultimate-youtube-engine.yml`, driven by
+  `src/project.ts` / `src/scenes/example.tsx` and `render.mjs`.
