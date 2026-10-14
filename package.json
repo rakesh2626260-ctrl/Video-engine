@@ -5,6 +5,7 @@
   "type": "module",
   "description": "Serverless video generator: GitHub Pages UI + repository_dispatch -> Revideo render -> artifact",
   "scripts": {
+    "postinstall": "node scripts/patch-revideo.mjs",
     "typecheck": "tsc --noEmit",
     "render": "node render.mjs"
   },

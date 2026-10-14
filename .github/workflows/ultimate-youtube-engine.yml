@@ -47,6 +47,8 @@ jobs:
           first_available libcups2t64 libcups2
           first_available libatspi2.0-0t64 libatspi2.0-0
           first_available libasound2t64 libasound2
+          first_available libxshmfence1
+          first_available libnspr4
 
       - name: Allow unprivileged user namespaces (AppArmor)
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
@@ -120,8 +122,27 @@ jobs:
       - name: Install npm dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Patch Revideo (drop the crashing --single-process flag)
+        run: node scripts/patch-revideo.mjs
+
       - name: Make sure Chromium is available for Revideo
         run: npx --yes puppeteer browsers install chrome
+
+      - name: Verify Chromium can launch
+        run: |
+          set +e
+          CHROME="$(node -e "console.log(require('puppeteer').executablePath())")"
+          echo "chrome: $CHROME"
+          "$CHROME" --version
+          echo "--- missing shared libraries ---"
+          ldd "$CHROME" 2>&1 | grep -i 'not found' || echo "none"
+          echo "--- direct headless smoke test ---"
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage \
+            --disable-setuid-sandbox --dump-dom about:blank >/tmp/chrome.html 2>/tmp/chrome.err
+          echo "exit=$?"
+          echo "--- stderr ---"
+          head -n 30 /tmp/chrome.err
+          exit 0
 
       - name: Render the silent video
         run: node render.mjs
