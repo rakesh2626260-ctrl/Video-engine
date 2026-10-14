@@ -1,26 +1,18 @@
-# Dependencies
-node_modules/
+# Static dashboard: no backend, no build, no dependencies.
+# Only local/editor noise and secrets belong here.
 
-# Revideo render output
-out/
-dist/
-
-# Generated per-job assets (created by the workflow, never committed)
-src/assets/
-narration.txt
-voiceover.wav
-final.mp4
-
-# Piper / model downloads
-piper/
-piper.tar.gz
-*.onnx
-*.onnx.json
-
-# Local / editor noise
+# Secrets / local environment
 .env
 .env.*
+*.local
+
+# Editor and OS noise
+.DS_Store
+Thumbs.db
 *.log
 npm-debug.log*
-.DS_Store
-.vite/
+.vscode/
+.idea/
+
+# Generated previews (never committed)
+seo-blueprint-*.md

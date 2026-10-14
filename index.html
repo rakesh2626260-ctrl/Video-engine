@@ -4,20 +4,32 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="dark" />
-    <title>video-engine — serverless video generator</title>
+    <meta
+      name="description"
+      content="TrendScope - a 100% client-side YouTube SEO and competitor research dashboard powered by the YouTube Data API v3 and Google Gemini. No backend, no server, no terminal."
+    />
+    <title>TrendScope - Serverless YouTube SEO &amp; Competitor Dashboard</title>
     <style>
       :root {
-        --bg: #0d1117;
-        --bg-soft: #12181f;
-        --card: #161b22;
-        --border: #262d36;
-        --text: #e6edf3;
-        --muted: #8b949e;
-        --accent: #58a6ff;
-        --ok: #2ea043;
+        --bg: #0b0f17;
+        --bg-soft: #111726;
+        --panel: #131a2a;
+        --panel-2: #0f1524;
+        --border: #223049;
+        --border-soft: #1b2538;
+        --text: #e6edf7;
+        --muted: #8b9bb4;
+        --faint: #5f6f88;
+        --accent: #4f8cff;
+        --accent-2: #7c5cff;
+        --ok: #3fb950;
         --warn: #d29922;
         --err: #f85149;
+        --chip: #1a2333;
         --radius: 14px;
+        --radius-sm: 9px;
+        --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
       }
 
       * {
@@ -31,682 +43,1669 @@
       }
 
       body {
-        background: radial-gradient(1200px 600px at 50% -10%, #16202e 0%, var(--bg) 55%) fixed;
-        color: var(--text);
-        font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-          Arial, sans-serif;
-        -webkit-text-size-adjust: 100%;
         min-height: 100vh;
+        background:
+          radial-gradient(1100px 520px at 12% -8%, rgba(79, 140, 255, 0.16), transparent 60%),
+          radial-gradient(900px 460px at 100% 0%, rgba(124, 92, 255, 0.14), transparent 55%),
+          var(--bg);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+        line-height: 1.55;
+      }
+
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
       }
 
       .wrap {
         width: 100%;
-        max-width: 720px;
+        max-width: 1120px;
         margin: 0 auto;
-        padding: 28px 18px 64px;
+        padding: 26px 18px 72px;
       }
 
-      header {
+      /* ---------- header ---------- */
+      .site-header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 22px;
+      }
+      .brand {
         display: flex;
         align-items: center;
         gap: 12px;
-        margin-bottom: 6px;
       }
-
       .logo {
-        width: 34px;
-        height: 34px;
+        width: 42px;
+        height: 42px;
         flex: 0 0 auto;
-        border-radius: 10px;
-        background: linear-gradient(145deg, #1f6feb, #2ea043);
         display: grid;
         place-items: center;
-        font-size: 17px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        box-shadow: 0 6px 18px rgba(79, 140, 255, 0.35);
+        color: #fff;
       }
-
-      h1 {
-        font-size: 22px;
-        letter-spacing: -0.01em;
+      .brand h1 {
+        font-size: 1.3rem;
         margin: 0;
+        letter-spacing: -0.01em;
       }
-
-      .sub {
+      .brand p {
+        margin: 0;
         color: var(--muted);
-        font-size: 15px;
-        margin: 2px 0 22px;
+        font-size: 0.86rem;
       }
-
-      .card {
-        background: var(--card);
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 6px 12px;
         border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 18px;
-        margin-bottom: 16px;
+        border-radius: 999px;
+        background: var(--panel-2);
+        color: var(--muted);
+        font-size: 0.78rem;
+        white-space: nowrap;
+      }
+      .pill .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--ok);
+        box-shadow: 0 0 0 3px rgba(63, 185, 80, 0.18);
       }
 
-      label {
-        display: block;
-        font-size: 14px;
-        font-weight: 600;
+      /* ---------- cards ---------- */
+      .card {
+        background: linear-gradient(180deg, var(--panel), var(--panel-2));
+        border: 1px solid var(--border-soft);
+        border-radius: var(--radius);
+        padding: 20px;
+        margin-bottom: 18px;
+        box-shadow: var(--shadow);
+      }
+      .card > h2 {
+        margin: 0 0 4px;
+        font-size: 1.02rem;
+        letter-spacing: -0.01em;
+      }
+      .card .sub {
+        margin: 0 0 16px;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        margin-bottom: 4px;
+      }
+      .field > label {
+        font-size: 0.82rem;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .req {
+        color: var(--accent);
+        font-size: 0.72rem;
+        border: 1px solid var(--border);
+        padding: 1px 6px;
+        border-radius: 999px;
+      }
+      .opt {
+        color: var(--faint);
+        font-size: 0.72rem;
+        border: 1px solid var(--border-soft);
+        padding: 1px 6px;
+        border-radius: 999px;
+      }
+
+      .input-group {
+        position: relative;
+        display: flex;
+      }
+      input[type="text"],
+      input[type="password"],
+      input[type="search"],
+      select,
+      textarea {
+        width: 100%;
+        background: #0a0f1b;
+        border: 1px solid var(--border);
         color: var(--text);
-        margin-bottom: 8px;
+        border-radius: var(--radius-sm);
+        padding: 11px 12px;
+        font-size: 0.92rem;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+      input::placeholder,
+      textarea::placeholder {
+        color: var(--faint);
+      }
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.16);
+      }
+      .input-group input {
+        padding-right: 46px;
+      }
+      .toggle {
+        position: absolute;
+        right: 6px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 34px;
+        height: 32px;
+        display: grid;
+        place-items: center;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+      }
+      .toggle:hover {
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
       }
 
       .hint {
+        margin: 12px 0 0;
+        color: var(--faint);
+        font-size: 0.78rem;
+      }
+      .hint code {
+        font-family: var(--mono);
+        font-size: 0.76rem;
         color: var(--muted);
-        font-size: 13px;
-        line-height: 1.5;
-        margin: 8px 0 0;
       }
 
-      input,
-      textarea {
-        width: 100%;
-        font-size: 16px;
-        color: var(--text);
-        background: var(--bg-soft);
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        padding: 12px 13px;
-        font-family: inherit;
-        line-height: 1.55;
-        outline: none;
-        -webkit-appearance: none;
+      .row-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
       }
 
-      input:focus,
-      textarea:focus {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.16);
-      }
-
-      textarea {
-        resize: vertical;
-        min-height: 132px;
-      }
-
-      textarea.code {
-        font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
-          "Liberation Mono", monospace;
-        font-size: 15px;
-        line-height: 1.6;
-        min-height: 190px;
-        tab-size: 2;
-      }
-
-      .field + .field {
-        margin-top: 18px;
-      }
-
+      /* ---------- buttons ---------- */
       button {
-        width: 100%;
-        font: inherit;
-        font-weight: 600;
-        color: #fff;
-        background: #21262d;
+        font-family: inherit;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        border-radius: var(--radius-sm);
         border: 1px solid var(--border);
-        border-radius: 10px;
-        padding: 14px 16px;
+        background: var(--panel-2);
+        color: var(--text);
+        font-size: 0.88rem;
+        font-weight: 600;
         cursor: pointer;
-        transition: filter 0.15s ease, opacity 0.15s ease;
+        transition: transform 0.06s ease, background 0.15s ease, border-color 0.15s ease;
       }
-
-      button:hover:not(:disabled) {
-        filter: brightness(1.15);
+      .btn:hover {
+        background: #182238;
+        border-color: #2c3d5c;
       }
-
-      button:disabled {
-        opacity: 0.55;
+      .btn:active {
+        transform: translateY(1px);
+      }
+      .btn:disabled {
+        opacity: 0.5;
         cursor: not-allowed;
       }
-
-      #generate {
-        background: linear-gradient(180deg, #1f6feb, #1a5fd0);
-        border-color: #1a5fd0;
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        border-color: transparent;
+        color: #fff;
+      }
+      .btn-primary:hover {
+        background: linear-gradient(135deg, #5f97ff, #8b6dff);
+      }
+      .btn-ghost {
+        background: transparent;
       }
 
-      #download {
-        background: linear-gradient(180deg, #2ea043, #238636);
-        border-color: #238636;
+      /* ---------- search ---------- */
+      .search-row {
+        display: grid;
+        grid-template-columns: 1fr auto auto auto;
+        gap: 10px;
+        align-items: stretch;
       }
-
-      .row {
+      @media (max-width: 760px) {
+        .search-row {
+          grid-template-columns: 1fr 1fr;
+        }
+        .search-row .grow {
+          grid-column: 1 / -1;
+        }
+      }
+      .search-row select {
+        width: auto;
+        min-width: 104px;
+      }
+      .chips {
         display: flex;
-        flex-direction: column;
-        gap: 12px;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
       }
-
-      .status {
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-      }
-
-      .dot {
-        width: 11px;
-        height: 11px;
-        flex: 0 0 auto;
-        margin-top: 6px;
-        border-radius: 50%;
-        background: var(--muted);
-      }
-
-      .dot.live {
-        background: var(--accent);
-        animation: pulse 1.4s ease-out infinite;
-      }
-
-      .dot.ok {
-        background: var(--ok);
-        animation: none;
-      }
-
-      .dot.error {
-        background: var(--err);
-        animation: none;
-      }
-
-      @keyframes pulse {
-        0% {
-          box-shadow: 0 0 0 0 rgba(88, 166, 255, 0.55);
-          opacity: 1;
-        }
-        70% {
-          box-shadow: 0 0 0 12px rgba(88, 166, 255, 0);
-          opacity: 0.75;
-        }
-        100% {
-          box-shadow: 0 0 0 0 rgba(88, 166, 255, 0);
-          opacity: 1;
-        }
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .dot.live {
-          animation: none;
-        }
-      }
-
-      .status-title {
-        font-weight: 600;
-        font-size: 15px;
-        margin: 0;
-      }
-
-      .status-detail {
+      .chip {
+        border: 1px solid var(--border);
+        background: var(--chip);
         color: var(--muted);
-        font-size: 14px;
-        margin: 2px 0 0;
-        word-break: break-word;
+        padding: 5px 11px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        cursor: pointer;
+      }
+      .chip:hover {
+        color: var(--text);
+        border-color: #2c3d5c;
       }
 
-      .status-detail a {
+      /* ---------- status ---------- */
+      #status {
+        border: 1px solid var(--border-soft);
+        background: var(--panel-2);
+        border-radius: var(--radius);
+        padding: 18px 20px;
+        margin-bottom: 18px;
+      }
+      .status-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .spinner {
+        width: 20px;
+        height: 20px;
+        flex: 0 0 auto;
+        border-radius: 50%;
+        border: 2.5px solid rgba(255, 255, 255, 0.14);
+        border-top-color: var(--accent);
+        animation: spin 0.8s linear infinite;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .spinner {
+          animation-duration: 2s;
+        }
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      #status.err {
+        border-color: rgba(248, 81, 73, 0.5);
+      }
+      .status-title {
+        margin: 0;
+        font-weight: 600;
+      }
+      .status-detail {
+        margin: 2px 0 0;
+        color: var(--muted);
+        font-size: 0.84rem;
+      }
+      .steps {
+        list-style: none;
+        margin: 16px 0 0;
+        padding: 0;
+        display: grid;
+        gap: 8px;
+      }
+      .steps li {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.85rem;
+        color: var(--faint);
+      }
+      .steps li .mark {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        display: grid;
+        place-items: center;
+        font-size: 0.68rem;
+        flex: 0 0 auto;
+      }
+      .steps li[data-state="active"] {
+        color: var(--text);
+      }
+      .steps li[data-state="active"] .mark {
+        border-color: var(--accent);
         color: var(--accent);
       }
-
-      video {
-        width: 100%;
-        margin-top: 14px;
-        border-radius: 10px;
-        background: #000;
-        border: 1px solid var(--border);
-      }
-
-      .endpoint {
+      .steps li[data-state="done"] {
         color: var(--muted);
-        font-size: 12.5px;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        margin-top: 10px;
-        word-break: break-all;
+      }
+      .steps li[data-state="done"] .mark {
+        border-color: var(--ok);
+        background: rgba(63, 185, 80, 0.14);
+        color: var(--ok);
       }
 
-      code {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        font-size: 13px;
-        background: var(--bg-soft);
+      /* ---------- results ---------- */
+      .results-grid {
+        display: grid;
+        grid-template-columns: 0.85fr 1.15fr;
+        gap: 18px;
+      }
+      @media (max-width: 860px) {
+        .results-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .topic-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .topic {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 11px;
+        border-radius: 999px;
+        background: var(--chip);
         border: 1px solid var(--border);
-        border-radius: 6px;
+        font-size: 0.82rem;
+      }
+      .topic .count {
+        font-family: var(--mono);
+        font-size: 0.72rem;
+        color: var(--accent);
+      }
+      .topic.big {
+        border-color: rgba(79, 140, 255, 0.5);
+      }
+
+      .table-scroll {
+        overflow-x: auto;
+        border: 1px solid var(--border-soft);
+        border-radius: var(--radius-sm);
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        min-width: 620px;
+        font-size: 0.83rem;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border-soft);
+        vertical-align: top;
+      }
+      th {
+        position: sticky;
+        top: 0;
+        background: #0f1626;
+        color: var(--muted);
+        font-weight: 600;
+        font-size: 0.76rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+      }
+      tbody tr:hover {
+        background: rgba(79, 140, 255, 0.05);
+      }
+      td.num {
+        font-family: var(--mono);
+        white-space: nowrap;
+      }
+      .faint {
+        color: var(--faint);
+        font-size: 0.76rem;
+      }
+      .bar {
+        display: inline-block;
+        height: 6px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--accent), var(--accent-2));
+        vertical-align: middle;
+      }
+
+      .blueprint-head {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 14px;
+      }
+      .blueprint-head h2 {
+        margin: 0;
+        font-size: 1.02rem;
+      }
+      .blueprint-actions {
+        display: flex;
+        gap: 8px;
+      }
+      .notice {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 11px 14px;
+        border-radius: var(--radius-sm);
+        border: 1px solid rgba(210, 153, 34, 0.4);
+        background: rgba(210, 153, 34, 0.08);
+        color: #e8c574;
+        font-size: 0.84rem;
+        margin-bottom: 14px;
+      }
+      .notice.info {
+        border-color: rgba(79, 140, 255, 0.4);
+        background: rgba(79, 140, 255, 0.08);
+        color: #9dc0ff;
+      }
+
+      /* ---------- markdown ---------- */
+      .markdown {
+        font-size: 0.92rem;
+        overflow-wrap: anywhere;
+      }
+      .markdown h1,
+      .markdown h2,
+      .markdown h3,
+      .markdown h4 {
+        line-height: 1.3;
+        margin: 1.35em 0 0.5em;
+        letter-spacing: -0.01em;
+      }
+      .markdown h1 {
+        font-size: 1.42rem;
+      }
+      .markdown h2 {
+        font-size: 1.18rem;
+        padding-bottom: 0.32em;
+        border-bottom: 1px solid var(--border-soft);
+      }
+      .markdown h3 {
+        font-size: 1.02rem;
+      }
+      .markdown h4 {
+        font-size: 0.95rem;
+        color: var(--muted);
+      }
+      .markdown p {
+        margin: 0.7em 0;
+      }
+      .markdown ul,
+      .markdown ol {
+        margin: 0.6em 0;
+        padding-left: 1.35em;
+      }
+      .markdown li {
+        margin: 0.28em 0;
+      }
+      .markdown blockquote {
+        margin: 0.9em 0;
+        padding: 0.5em 1em;
+        border-left: 3px solid var(--accent);
+        background: rgba(79, 140, 255, 0.06);
+        border-radius: 0 8px 8px 0;
+        color: var(--muted);
+      }
+      .markdown code {
+        font-family: var(--mono);
+        font-size: 0.84em;
+        background: #0b1220;
+        border: 1px solid var(--border-soft);
         padding: 1px 5px;
+        border-radius: 6px;
+      }
+      .markdown pre.code-block {
+        background: #0a1020;
+        border: 1px solid var(--border-soft);
+        border-radius: var(--radius-sm);
+        padding: 14px;
+        overflow-x: auto;
+        margin: 0.9em 0;
+      }
+      .markdown pre.code-block code {
+        background: none;
+        border: 0;
+        padding: 0;
+        font-size: 0.82rem;
+        line-height: 1.5;
+      }
+      .markdown hr {
+        border: none;
+        border-top: 1px solid var(--border-soft);
+        margin: 1.4em 0;
+      }
+      .markdown img {
+        max-width: 100%;
+        border-radius: 8px;
+      }
+      .markdown table {
+        min-width: 0;
+        font-size: 0.85rem;
       }
 
       footer {
-        color: var(--muted);
-        font-size: 13px;
-        text-align: center;
         margin-top: 26px;
+        color: var(--faint);
+        font-size: 0.78rem;
+        text-align: center;
+        line-height: 1.7;
       }
 
-      [hidden] {
-        display: none !important;
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 26px;
+        transform: translate(-50%, 20px);
+        background: #101a2c;
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 10px 16px;
+        border-radius: 999px;
+        font-size: 0.84rem;
+        box-shadow: var(--shadow);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        z-index: 50;
+      }
+      .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
       }
     </style>
   </head>
   <body>
-    <main class="wrap">
-      <header>
-        <div class="logo">🎬</div>
-        <div>
-          <h1>video-engine</h1>
-        </div>
-      </header>
-      <p class="sub">
-        Paste a voiceover script and a code block. GitHub Actions types it out,
-        narrates it with Piper and renders an MP4 — no server of your own.
-      </p>
-
-      <section class="card" aria-labelledby="token-label">
-        <div class="field">
-          <label id="token-label" for="token">GitHub token</label>
-          <input id="token" type="password" autocomplete="off" spellcheck="false"
-            placeholder="Paste a GitHub token (repo + workflow)…"
-          <p class="hint">
-            Kept in this browser only (<code>localStorage</code>). Use a token that
-            can dispatch workflows on <strong id="repo-name">this repository</strong>
-            (classic: <code>repo</code> + <code>workflow</code>; fine-grained:
-            <em>Actions: read &amp; write</em>). It is never committed.
-          </p>
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="field">
-          <label for="script">Voiceover script</label>
-          <textarea id="script" placeholder="In this video we build a tiny typewriter effect…"></textarea>
-        </div>
-
-        <div class="field">
-          <label for="code">Code block</label>
-          <textarea id="code" class="code" spellcheck="false" wrap="off"
-            placeholder="const hello = () => 'world';"></textarea>
-        </div>
-
-        <div class="field">
-          <button id="generate" type="button">Generate</button>
-          <p class="endpoint" id="endpoint"></p>
-        </div>
-      </section>
-
-      <section class="card" id="status-card">
-        <div class="status">
-          <span class="dot" id="dot" aria-hidden="true"></span>
+    <div class="wrap">
+      <header class="site-header">
+        <div class="brand">
+          <span class="logo" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 3v18h18" />
+              <rect x="7" y="12" width="3" height="6" rx="1" />
+              <rect x="12" y="8" width="3" height="10" rx="1" />
+              <rect x="17" y="5" width="3" height="13" rx="1" />
+            </svg>
+          </span>
           <div>
-            <p class="status-title" id="status-title">Idle</p>
-            <p class="status-detail" id="status-detail">
-              Waiting for your script.
-            </p>
+            <h1>TrendScope</h1>
+            <p>Serverless YouTube SEO &amp; competitor research</p>
+          </div>
+        </div>
+        <span class="pill"><span class="dot"></span> 100% client-side &middot; no backend</span>
+      </header>
+
+      <!-- ---------------- configuration ---------------- -->
+      <section class="card" aria-labelledby="config-title">
+        <h2 id="config-title">API configuration</h2>
+        <p class="sub">
+          Your keys stay in this browser only (<code>localStorage</code>) and are sent straight to
+          Google. Nothing is transmitted to, or stored on, any server.
+        </p>
+
+        <div class="grid">
+          <div class="field">
+            <label for="yt-key">YouTube Data API v3 key <span class="req">required</span></label>
+            <div class="input-group">
+              <input id="yt-key" type="password" autocomplete="off" spellcheck="false" placeholder="AIza..." />
+              <button class="toggle" type="button" data-toggle="yt-key" aria-label="Show or hide YouTube key" aria-pressed="false"></button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="gemini-key">Gemini API key <span class="opt">optional</span></label>
+            <div class="input-group">
+              <input id="gemini-key" type="password" autocomplete="off" spellcheck="false" placeholder="AIza..." />
+              <button class="toggle" type="button" data-toggle="gemini-key" aria-label="Show or hide Gemini key" aria-pressed="false"></button>
+            </div>
           </div>
         </div>
 
-        <div style="margin-top: 16px" class="row">
-          <button id="download" type="button" hidden>Download Video</button>
-          <video id="preview" controls playsinline hidden></video>
+        <div class="field" style="max-width: 340px; margin-top: 14px">
+          <label for="gemini-model">Gemini model</label>
+          <select id="gemini-model">
+            <option value="gemini-2.5-flash">gemini-2.5-flash (fast, recommended)</option>
+            <option value="gemini-2.5-pro">gemini-2.5-pro (highest quality)</option>
+            <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+            <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+          </select>
         </div>
+
+        <div class="row-actions">
+          <button class="btn btn-ghost" type="button" id="clear-keys">Clear saved keys</button>
+          <span class="pill" id="save-state" hidden><span class="dot"></span> Keys saved locally</span>
+        </div>
+
+        <p class="hint">
+          New here? Create a key in the
+          <a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" rel="noopener noreferrer">Google Cloud console</a>
+          (enable <em>YouTube Data API v3</em>) and one in
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a>
+          (for Gemini). Restrict the YouTube key to your Pages domain for safety.
+        </p>
+      </section>
+
+      <!-- ---------------- search ---------------- -->
+      <section class="card" aria-labelledby="search-title">
+        <h2 id="search-title">Research a topic</h2>
+        <p class="sub">Enter a niche or keyword. TrendScope pulls live YouTube data and builds an SEO blueprint.</p>
+        <form id="search-form">
+          <div class="search-row">
+            <input class="grow" id="query" type="search" placeholder="e.g. home espresso machines" autocomplete="off" required />
+            <select id="region" aria-label="Trending region">
+              <option value="US">US</option>
+              <option value="GB">UK</option>
+              <option value="CA">Canada</option>
+              <option value="AU">Australia</option>
+              <option value="IN">India</option>
+              <option value="DE">Germany</option>
+              <option value="FR">France</option>
+              <option value="ES">Spain</option>
+              <option value="IT">Italy</option>
+              <option value="BR">Brazil</option>
+              <option value="JP">Japan</option>
+              <option value="MX">Mexico</option>
+            </select>
+            <select id="max-results" aria-label="Number of competitors">
+              <option value="10">Top 10</option>
+              <option value="25" selected>Top 25</option>
+              <option value="50">Top 50</option>
+            </select>
+            <button class="btn btn-primary" type="submit" id="analyze-btn">Analyze</button>
+          </div>
+          <div class="chips" id="examples" aria-label="Example topics">
+            <button class="chip" type="button">home espresso machines</button>
+            <button class="chip" type="button">budget gaming laptops</button>
+            <button class="chip" type="button">beginner sourdough baking</button>
+            <button class="chip" type="button">AI coding tools</button>
+            <button class="chip" type="button">van life conversion</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- ---------------- status ---------------- -->
+      <section id="status" hidden aria-live="polite">
+        <div class="status-head">
+          <span class="spinner" id="spinner" hidden aria-hidden="true"></span>
+          <div>
+            <p class="status-title" id="status-title">Working…</p>
+            <p class="status-detail" id="status-detail">Fetching data from Google.</p>
+          </div>
+        </div>
+        <ul class="steps" id="steps" hidden>
+          <li data-step="search"><span class="mark"></span> Search YouTube for the topic</li>
+          <li data-step="details"><span class="mark"></span> Collect competitor statistics</li>
+          <li data-step="trending"><span class="mark"></span> Scan regional trending videos</li>
+          <li data-step="analyze"><span class="mark"></span> Extract topics &amp; analytics</li>
+          <li data-step="blueprint"><span class="mark"></span> Generate the SEO blueprint</li>
+        </ul>
+      </section>
+
+      <!-- ---------------- results ---------------- -->
+      <section id="results" hidden>
+        <div class="results-grid">
+          <article class="card">
+            <h2>Trending topics</h2>
+            <p class="sub">Most frequent terms across the retrieved titles and descriptions.</p>
+            <div class="topic-list" id="topics"></div>
+          </article>
+
+          <article class="card">
+            <h2>Competitor analytics</h2>
+            <p class="sub" id="competitor-sub">Top results for your query.</p>
+            <div class="table-scroll">
+              <table id="competitor-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Video</th>
+                    <th>Channel</th>
+                    <th>Published</th>
+                    <th>Views</th>
+                    <th>Likes</th>
+                    <th>Comments</th>
+                    <th>Engagement</th>
+                    <th>Views/day</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </article>
+        </div>
+
+        <article class="card" aria-labelledby="blueprint-title">
+          <div class="blueprint-head">
+            <h2 id="blueprint-title">SEO blueprint</h2>
+            <div class="blueprint-actions">
+              <button class="btn" type="button" id="copy-btn">Copy to clipboard</button>
+              <button class="btn" type="button" id="download-btn">Download Markdown report</button>
+            </div>
+          </div>
+          <div id="blueprint-notice"></div>
+          <div class="markdown" id="blueprint"></div>
+        </article>
       </section>
 
       <footer>
-        <span id="powered">Rendered by Revideo + Piper on GitHub Actions</span>
+        <p>
+          TrendScope runs entirely in your browser. No backend, no proxies, no terminal required.
+        </p>
+        <p>
+          Data &copy; YouTube Data API v3 &middot; Blueprint &copy; Google Gemini. Quota and terms of the
+          respective Google APIs apply.
+        </p>
       </footer>
-    </main>
+    </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script>
-      /* ------------------------------------------------------------------ *
-       * Configuration. Replace these placeholders with your own values, or
-       * leave them as-is: the page then reads them from the github.io URL and
-       * asks for a token that is stored in localStorage.
-       * ------------------------------------------------------------------ */
-      const GITHUB_TOKEN = "YOUR_GITHUB_TOKEN";
-      const REPO_OWNER = "YOUR_GITHUB_USERNAME";
-      const REPO_NAME = "YOUR_REPOSITORY_NAME";
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-      const API = 'https://api.github.com';
-      const POLL_MS = 10000;
-      const TOKEN_KEY = 'video-engine:github-token';
-      const SCRIPT_KEY = 'video-engine:script';
-      const CODE_KEY = 'video-engine:code-block';
+    <script type="module">
+      /* =====================================================================
+       * TrendScope - client-side YouTube SEO & competitor dashboard
+       * Zero backend: the browser talks to the YouTube Data API v3 and the
+       * Gemini API directly over HTTPS with fetch().
+       * ===================================================================== */
 
-      const isPlaceholder = value =>
-        !value || /^YOUR_/i.test(String(value).trim());
-
-      /* --- resolve owner / repo (placeholders -> github.io URL) ---------- */
-
-      let owner = isPlaceholder(REPO_OWNER) ? '' : REPO_OWNER.trim();
-      let repo = isPlaceholder(REPO_NAME) ? '' : REPO_NAME.trim();
-      let detected = { owner: !!owner, repo: !!repo };
-
-      (function detectFromPagesUrl() {
-        const host = location.hostname;
-        if (!host.endsWith('.github.io')) return;
-        const parts = host.split('.');
-        const user = parts[0];
-        const segments = location.pathname.split('/').filter(Boolean);
-        if (!owner && user) {
-          owner = user;
-          detected.owner = true;
-        }
-        if (!repo && segments.length > 0) {
-          repo = decodeURIComponent(segments[0]);
-          detected.repo = true;
-        }
-      })();
-
-      /* --- token -------------------------------------------------------- */
-
-      const tokenIsPlaceholder = isPlaceholder(GITHUB_TOKEN);
-      let token = tokenIsPlaceholder ? localStorage.getItem(TOKEN_KEY) || '' : GITHUB_TOKEN;
-
-      /* --- elements ----------------------------------------------------- */
-
-      const el = {
-        tokenCard: document.querySelector('[aria-labelledby="token-label"]'),
-        token: document.getElementById('token'),
-        repoName: document.getElementById('repo-name'),
-        script: document.getElementById('script'),
-        code: document.getElementById('code'),
-        generate: document.getElementById('generate'),
-        endpoint: document.getElementById('endpoint'),
-        dot: document.getElementById('dot'),
-        title: document.getElementById('status-title'),
-        detail: document.getElementById('status-detail'),
-        download: document.getElementById('download'),
-        preview: document.getElementById('preview'),
+      const LS = {
+        yt: "trendscope.youtubeKey",
+        gemini: "trendscope.geminiKey",
+        model: "trendscope.geminiModel",
+        region: "trendscope.region",
+        max: "trendscope.maxResults",
       };
 
-      el.repoName.textContent = owner && repo ? owner + '/' + repo : 'your repository';
-      el.tokenCard.hidden = !tokenIsPlaceholder;
-      if (tokenIsPlaceholder) el.token.value = token;
-      el.endpoint.textContent =
-        owner && repo
-          ? 'POST ' + API + '/repos/' + owner + '/' + repo + '/dispatches'
-          : 'Owner/repo could not be detected. Open this page from your GitHub Pages URL.';
+      const YT_BASE = "https://www.googleapis.com/youtube/v3/";
+      const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models/";
 
-      el.script.value = localStorage.getItem(SCRIPT_KEY) || '';
-      el.code.value =
-        localStorage.getItem(CODE_KEY) ||
-        [
-          "// Type the code you want on screen",
-          "export async function render(input) {",
-          "  const frame = await build(input); // 60fps",
-          "  return frame;",
-          "}",
-        ].join('\n');
+      const $ = (id) => document.getElementById(id);
+      const el = (tag, props) => Object.assign(document.createElement(tag), props || {});
 
-      /* --- status helpers ----------------------------------------------- */
+      /* ---------------- tiny local persistence ---------------- */
+      const store = {
+        get(key, fallback = "") {
+          try {
+            return localStorage.getItem(key) ?? fallback;
+          } catch {
+            return fallback;
+          }
+        },
+        set(key, value) {
+          try {
+            localStorage.setItem(key, value);
+          } catch {
+            /* storage may be disabled (private mode) - not fatal */
+          }
+        },
+        del(key) {
+          try {
+            localStorage.removeItem(key);
+          } catch {
+            /* ignore */
+          }
+        },
+      };
 
-      let running = false;
-      let pollTimer = null;
-      let jobId = null;
-      let dispatchedAt = 0;
-      let artifact = null;
+      /* ---------------- key visibility toggles ---------------- */
+      const EYE = {
+        open:
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>',
+        off: '<svg width="18" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 5.2A10.6 10.6 0 0112 5c6 0 10 7 10 7a17.4 17.4 0 01-3.2 4.1"/><path d="M6.6 6.6A17.5 17.5 0 002 12s4 7 10 7a10.5 10.5 0 004-.8"/></svg>',
+      };
 
-      function setStatus(state, title, detail, link) {
-        el.dot.className = 'dot' + (state ? ' ' + state : '');
-        el.title.textContent = title;
-        el.detail.innerHTML = '';
-        el.detail.append(detail);
-        if (link) {
-          const a = document.createElement('a');
-          a.href = link.href;
-          a.target = '_blank';
-          a.rel = 'noopener';
-          a.textContent = link.text;
-          el.detail.append(' ', a);
+      function wireToggles() {
+        document.querySelectorAll(".toggle").forEach((btn) => {
+          const input = $(btn.dataset.toggle);
+          const paint = () => {
+            const shown = input.type === "text";
+            btn.innerHTML = shown ? EYE.off : EYE.open;
+            btn.setAttribute("aria-pressed", String(shown));
+          };
+          paint();
+          btn.addEventListener("click", () => {
+            input.type = input.type === "text" ? "password" : "text";
+            paint();
+            input.focus({ preventScroll: true });
+          });
+        });
+      }
+
+      /* ---------------- config load / save ---------------- */
+      function flashSaved() {
+        const badge = $("save-state");
+        badge.hidden = false;
+        clearTimeout(flashSaved._t);
+        flashSaved._t = setTimeout(() => (badge.hidden = true), 1600);
+      }
+
+      function loadConfig() {
+        $("yt-key").value = store.get(LS.yt);
+        $("gemini-key").value = store.get(LS.gemini);
+        $("gemini-model").value = store.get(LS.model, "gemini-2.5-flash");
+        $("region").value = store.get(LS.region, "US");
+        $("max-results").value = store.get(LS.max, "25");
+      }
+
+      function wireConfig() {
+        const persist = () => flashSaved();
+        $("yt-key").addEventListener("input", (e) => {
+          store.set(LS.yt, e.target.value.trim());
+          persist();
+        });
+        $("gemini-key").addEventListener("input", (e) => {
+          store.set(LS.gemini, e.target.value.trim());
+          persist();
+        });
+        $("gemini-model").addEventListener("change", (e) => {
+          store.set(LS.model, e.target.value);
+          flashSaved();
+        });
+        $("region").addEventListener("change", (e) => store.set(LS.region, e.target.value));
+        $("max-results").addEventListener("change", () => store.set(LS.max, $("max-results").value));
+
+        $("clear-keys").addEventListener("click", () => {
+          if (!confirm("Remove the saved API keys from this browser?")) return;
+          [LS.yt, LS.gemini].forEach((k) => store.set(k, ""));
+          $("yt-key").value = "";
+          $("gemini-key").value = "";
+          toast("Saved keys cleared");
+        });
+      }
+
+      /* ---------------- fetch helpers ---------------- */
+      async function fetchWithTimeout(url, options = {}, ms = 25000) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), ms);
+        try {
+          return await fetch(url, { ...options, signal: controller.signal });
+        } finally {
+          clearTimeout(timer);
         }
       }
 
-      function fail(detail, link) {
-        stopPolling();
-        running = false;
-        el.generate.disabled = false;
-        el.generate.textContent = 'Generate';
-        setStatus('error', 'Failed', detail, link);
-      }
-
-      function stopPolling() {
-        if (pollTimer) clearInterval(pollTimer);
-        pollTimer = null;
-      }
-
-      async function api(path) {
-        const res = await fetch(API + path, {
-          headers: {
-            Accept: 'application/vnd.github+json',
-            Authorization: 'Bearer ' + token,
-            'X-GitHub-Api-Version': '2022-11-28',
-          },
-        });
+      async function googleJson(res) {
+        const text = await res.text();
+        let data;
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch {
+          data = {};
+        }
         if (!res.ok) {
-          throw new Error(res.status + ' ' + res.statusText + ' — ' + (await res.text()));
+          const msg =
+            data?.error?.message ||
+            data?.error?.status ||
+            `${res.status} ${res.statusText}`;
+          const err = new Error(msg);
+          err.status = res.status;
+          throw err;
         }
-        return res.json();
+        return data;
       }
 
-      /* --- generate ----------------------------------------------------- */
+      /* ---------------- YouTube Data API v3 ---------------- */
+      const yt = {
+        async search(query, apiKey, maxResults) {
+          const url = new URL(YT_BASE + "search");
+          Object.entries({
+            part: "snippet",
+            type: "video",
+            q: query,
+            maxResults: String(maxResults),
+            order: "viewCount",
+            key: apiKey,
+          }).forEach(([k, v]) => url.searchParams.set(k, v));
+          return googleJson(await fetchWithTimeout(url, {}, 20000));
+        },
+        async videos(ids, apiKey) {
+          if (!ids.length) return { items: [] };
+          const url = new URL(YT_BASE + "videos");
+          Object.entries({
+            part: "snippet,statistics,contentDetails",
+            id: ids.join(","),
+            key: apiKey,
+          }).forEach(([k, v]) => url.searchParams.set(k, v));
+          return googleJson(await fetchWithTimeout(url, {}, 20000));
+        },
+        async trending(regionCode, apiKey) {
+          const url = new URL(YT_BASE + "videos");
+          Object.entries({
+            part: "snippet,statistics",
+            chart: "mostPopular",
+            regionCode,
+            maxResults: "20",
+            key: apiKey,
+          }).forEach(([k, v]) => url.searchParams.set(k, v));
+          return googleJson(await fetchWithTimeout(url, {}, 20000));
+        },
+      };
 
-      function newJobId() {
-        // strictly alphanumeric — the workflow rejects anything else
-        return (
-          'j' +
-          Date.now().toString(36) +
-          Math.random().toString(36).slice(2, 8)
-        ).replace(/[^a-z0-9]/gi, '');
+      /* ---------------- analytics helpers ---------------- */
+      const NUM = (v) => (v === undefined || v === null ? 0 : Number(v));
+
+      function compact(n) {
+        n = NUM(n);
+        if (n >= 1e9) return (n / 1e9).toFixed(n >= 1e10 ? 0 : 1) + "B";
+        if (n >= 1e6) return (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + "M";
+        if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e4 ? 0 : 1) + "K";
+        return String(n);
       }
 
-      async function generate() {
-        if (running) return;
-        if (!owner || !repo) {
-          fail('This page could not work out the owner/repo. Open it from GitHub Pages.');
-          return;
-        }
-        if (!token) {
-          el.tokenCard.hidden = false;
-          el.token.focus();
-          fail('Add a GitHub token first.');
-          return;
-        }
+      const STOPWORDS = new Set(
+        "a about above after again against all am an and any are aren't as at be because been before being below between both but by can't cannot could couldn't did didn't do does doesn't doing don't down during each few for from further had hadn't has hasn't have haven't having he he'd he'll he's her here here's hers herself him himself his how how's i i'd i'll i'm i've if in into is isn't it it's its itself let's me more most mustn't my myself no nor not of off on once only or other ought our ours ourselves out over own same shan't she she'd she'll she's should shouldn't so some such than that that's the their theirs them themselves then there there's these they they'd they'll they're they've this those through to too under until up very was wasn't we we'd we'll we're we've were weren't what what's when when's where where's which while who who's whom why why's with won't would wouldn't you you'd you'll you're you've your yours yourself yourselves best top new 2024 2025 2026 full hd video".split(
+          " ",
+        ),
+      );
 
-        const script = el.script.value.trim();
-        const code = el.code.value;
-        localStorage.setItem(SCRIPT_KEY, el.script.value);
-        localStorage.setItem(CODE_KEY, code);
-
-        if (!script && !code.trim()) {
-          fail('Write a voiceover script or a code block first.');
-          return;
-        }
-
-        running = true;
-        artifact = null;
-        el.download.hidden = true;
-        el.preview.hidden = true;
-        el.generate.disabled = true;
-        el.generate.textContent = 'Working…';
-        setStatus('live', 'Dispatching…', 'Sending the job to GitHub Actions.');
-
-        jobId = newJobId();
-
-        try {
-          const res = await fetch(
-            API + '/repos/' + owner + '/' + repo + '/dispatches',
-            {
-              method: 'POST',
-              headers: {
-                Accept: 'application/vnd.github+json',
-                Authorization: 'Bearer ' + token,
-                'X-GitHub-Api-Version': '2022-11-28',
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                event_type: 'generate_video',
-                client_payload: { job_id: jobId, script: script, code: code },
-              }),
-            },
-          );
-
-          if (res.status !== 204) {
-            const body = await res.text();
-            fail(
-              'Dispatch returned ' + res.status + ' ' + res.statusText + '. ' + body.slice(0, 300),
-            );
-            return;
-          }
-
-          dispatchedAt = Date.now();
-          setStatus('live', 'Queued', 'Job ' + jobId + ' dispatched. Polling every 10s…');
-          poll();
-          pollTimer = setInterval(poll, POLL_MS);
-        } catch (error) {
-          fail(String(error && error.message ? error.message : error));
-        }
-      }
-
-      /* --- polling ------------------------------------------------------ */
-
-      async function poll() {
-        if (!jobId) return;
-
-        try {
-          const artifacts = await api(
-            '/repos/' + owner + '/' + repo + '/actions/artifacts?name=video-' + jobId,
-          );
-
-          if (!artifacts.total_count) {
-            await pollRuns();
-            return;
-          }
-
-          artifact = artifacts.artifacts[0];
-          stopPolling();
-          const runId = artifact.workflow_run?.id;
-          setStatus(
-            'ok',
-            'Video ready',
-            'Artifact video-' + jobId + ' (' + formatBytes(artifact.size_in_bytes) + ') is ready.',
-            {
-              href: runId
-                ? 'https://github.com/' + owner + '/' + repo + '/actions/runs/' + runId
-                : 'https://github.com/' + owner + '/' + repo + '/actions',
-              text: runId ? 'open run' : 'all runs',
-            },
-          );
-          await fetchAndPreview(artifact);
-        } catch (error) {
-          const message = String(error && error.message ? error.message : error);
-          if (/401|403/.test(message)) {
-            fail('GitHub rejected the token. ' + message);
-          } else {
-            setStatus('live', 'Still working…', message);
-          }
-        }
-      }
-
-      async function pollRuns() {
-        const runs = await api(
-          '/repos/' + owner + '/' + repo + '/actions/runs?event=repository_dispatch&per_page=30',
-        );
-        const list = runs.workflow_runs || [];
-        const mine =
-          list.find(run => String(run.name || '').includes(jobId)) ||
-          list.find(run => new Date(run.created_at).getTime() >= dispatchedAt - 120000);
-
-        if (!mine) {
-          setStatus('live', 'Queued', 'Waiting for GitHub to pick up ' + jobId + '…');
-          return;
-        }
-
-        const link = { href: mine.html_url, text: 'open run #' + mine.run_number };
-        const conclusion = mine.conclusion;
-
-        if (mine.status !== 'completed') {
-          setStatus(
-            'live',
-            mine.status === 'in_progress' ? 'Rendering…' : 'Queued',
-            'Run #' + mine.run_number + ' is ' + mine.status.replace('_', ' ') + '.',
-            link,
-          );
-          return;
-        }
-
-        if (conclusion === 'success') {
-          setStatus(
-            'live',
-            'Wrapping up…',
-            'Run #' + mine.run_number + ' succeeded, waiting for the artifact.',
-            link,
-          );
-          return;
-        }
-
-        fail('Run #' + mine.run_number + ' finished with "' + conclusion + '".', link);
-      }
-
-      /* --- download + preview ------------------------------------------- */
-
-      async function fetchAndPreview(art) {
-        setStatus('live', 'Downloading…', 'Fetching the artifact archive.');
-        el.download.hidden = true;
-
-        const res = await fetch(art.archive_download_url, {
-          headers: {
-            Accept: 'application/vnd.github+json',
-            Authorization: 'Bearer ' + token,
-            'X-GitHub-Api-Version': '2022-11-28',
-          },
-        });
-        if (!res.ok) throw new Error('artifact download ' + res.status);
-
-        const blob = await res.blob();
-        const zip = await JSZip.loadAsync(blob);
-        const entry = Object.keys(zip.files).find(
-          name => name.toLowerCase().endsWith('.mp4') && !zip.files[name].dir,
-        );
-        if (!entry) throw new Error('no .mp4 inside the artifact');
-
-        const mp4 = await zip.files[entry].async('blob');
-        const url = URL.createObjectURL(mp4);
-
-        el.preview.src = url;
-        el.preview.hidden = false;
-        el.download.hidden = false;
-        el.download.onclick = () => {
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'video-' + jobId + '.mp4';
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
+      function extractTopics(texts, limit = 16) {
+        const counts = new Map();
+        const bump = (term, weight) => {
+          if (term.length < 3 || /^\d+$/.test(term)) return;
+          counts.set(term, (counts.get(term) || 0) + weight);
         };
-
-        el.generate.disabled = false;
-        el.generate.textContent = 'Generate';
-        running = false;
-        setStatus('ok', 'Done', 'Preview below — ' + entry + ' (' + formatBytes(mp4.size) + ').');
+        for (const text of texts) {
+          const words = String(text)
+            .toLowerCase()
+            .replace(/https?:\/\/\S+/g, " ")
+            .replace(/[^a-z0-9\s']/g, " ")
+            .split(/\s+/)
+            .filter(Boolean)
+            .filter((w) => !STOPWORDS.has(w));
+          words.forEach((w) => bump(w, 1));
+          for (let i = 0; i < words.length - 1; i++) {
+            bump(`${words[i]} ${words[i + 1]}`, 2);
+          }
+        }
+        return [...counts.entries()]
+          .sort((a, b) => b[1] - a[1] || b[0].length - a[0].length)
+          .slice(0, limit)
+          .map(([term, weight]) => ({ term, count: counts.get(term), score: weight }));
       }
 
-      function formatBytes(bytes) {
-        if (!bytes) return '0 B';
-        const units = ['B', 'KB', 'MB', 'GB'];
-        const i = Math.min(units.length - 1, Math.floor(Math.log(bytes) / Math.log(1024)));
-        return (bytes / Math.pow(1024, i)).toFixed(i ? 1 : 0) + ' ' + units[i];
-      }
-
-      /* --- wiring ------------------------------------------------------- */
-
-      el.token.addEventListener('change', () => {
-        token = el.token.value.trim();
-        if (token) localStorage.setItem(TOKEN_KEY, token);
-        else localStorage.removeItem(TOKEN_KEY);
-      });
-
-      el.generate.addEventListener('click', generate);
-
-      if (!owner || !repo) {
-        setStatus(
-          'error',
-          'Not configured',
-          'Owner/repo are placeholders and this is not a github.io URL, so the API endpoint is unknown.',
+      /* ---------------- Gemini API ---------------- */
+      async function generateBlueprint(prompt, apiKey, model) {
+        const url = `${GEMINI_BASE}${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(
+          apiKey,
+        )}`;
+        const body = {
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.7, topP: 0.95, maxOutputTokens: 4096 },
+        };
+        const res = await fetchWithTimeout(
+          url,
+          { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
+          60000,
         );
+        const data = await googleJson(res);
+        const parts = data?.candidates?.[0]?.content?.parts || [];
+        const out = parts
+          .map((p) => p.text || "")
+          .join("\n")
+          .trim();
+        if (!out) throw new Error("Gemini returned an empty response.");
+        return out;
       }
+
+      /* =====================================================================
+       * Minimal, dependency-free Markdown renderer (safe: escapes HTML first)
+       * ===================================================================== */
+      const ESC = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+      const escapeHtml = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ESC[c]);
+
+      function inlineMd(text) {
+        let s = escapeHtml(text);
+        s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
+        s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, '<img alt="$1" src="$2" loading="lazy" />');
+        s = s.replace(
+          /\[([^\]]+)\]\(([^)\s]+)\)/g,
+          '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>',
+        );
+        s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+        s = s.replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
+        s = s.replace(/(^|[^_])_([^_\n]+)_/g, "$1<em>$2</em>");
+        return s;
+      }
+
+      const splitRow = (line) =>
+        line
+          .trim()
+          .replace(/^\|/, "")
+          .replace(/\|$/, "")
+          .split("|")
+          .map((c) => c.trim());
+
+      function renderMarkdown(md) {
+        const lines = String(md ?? "").replace(/\r\n?/g, "\n").split("\n");
+        const out = [];
+        let i = 0;
+        const blank = (l) => l.trim() === "";
+
+        while (i < lines.length) {
+          const line = lines[i];
+
+          if (blank(line)) {
+            i++;
+            continue;
+          }
+
+          const fence = line.match(/^```([\w-]*)\s*$/);
+          if (fence) {
+            const lang = fence[1] || "";
+            const buf = [];
+            i++;
+            while (i < lines.length && !/^```\s*$/.test(lines[i])) {
+              buf.push(lines[i]);
+              i++;
+            }
+            i++;
+            out.push(
+              `<pre class="code-block"><code class="${lang ? "language-" + escapeHtml(lang) : ""}">${escapeHtml(
+                buf.join("\n"),
+              )}</code></pre>`,
+            );
+            continue;
+          }
+
+          const heading = line.match(/^(#{1,6})\s+(.*)$/);
+          if (heading) {
+            const lvl = fence ? 1 : fence;
+            const level = heading[1].length;
+            out.push(`<h${level}>${inlineMd(line.replace(/^#{1,6}\s+/, ""))}</h${level}>`);
+            i++;
+            continue;
+          }
+
+          if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(line)) {
+            out.push("<hr />");
+            i++;
+            continue;
+          }
+
+          if (/^\s*>\s?/.test(line)) {
+            const buf = [];
+            while (i < lines.length && /^\s*>\s?/.test(lines[i])) {
+              buf.push(lines[i].replace(/^\s*>\s?/, ""));
+              i++;
+            }
+            out.push(`<blockquote>${renderMarkdown(buf.join("\n"))}</blockquote>`);
+            continue;
+          }
+
+          if (
+            line.includes("|") &&
+            i + 1 < lines.length &&
+            lines[i + 1].includes("-") &&
+            /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(lines[i + 1])
+          ) {
+            const header = splitRow(line);
+            i += 2;
+            const rows = [];
+            while (i < lines.length && !blank(lines[i]) && lines[i].includes("|")) {
+              rows.push(splitRow(lines[i]));
+              i++;
+            }
+            let t = '<div class="table-scroll"><table><thead><tr>';
+            t += header.map((c) => `<th>${inlineMd(c)}</th>`).join("");
+            t += "</tr></thead><tbody>";
+            for (const r of rows) {
+              t +=
+                "<tr>" +
+                header.map((_, idx) => `<td>${inlineMd(r[idx] ?? "")}</td>`).join("") +
+                "</tr>";
+            }
+            t += "</tbody></table></div>";
+            out.push(t);
+            continue;
+          }
+
+          if (/^\s*([-*+]|\d+\.)\s+/.test(line)) {
+            const ordered = /^\s*\d+\.\s+/.test(line);
+            const items = [];
+            while (i < lines.length && /^\s*([-*+]|\d+\.)\s+/.test(lines[i])) {
+              items.push(lines[i].replace(/^\s*([-*+]|\d+\.)\s+/, ""));
+              i++;
+            }
+            const tag = ordered ? "ol" : "ul";
+            out.push(
+              `<${tag}>` +
+                items.map((it) => `<li>${inlineMd(it)}</li>`).join("") +
+                `</${tag}>`,
+            );
+            continue;
+          }
+
+          const para = [line];
+          i++;
+          while (
+            i < lines.length &&
+            !blank(lines[i]) &&
+            !/^(#{1,6}\s|```|\s*>|\s*([-*+]|\d+\.)\s)/.test(lines[i]) &&
+            !(
+              lines[i].includes("|") &&
+              i + 1 < lines.length &&
+              /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(lines[i + 1])
+            )
+          ) {
+            para.push(lines[i]);
+            i++;
+          }
+          out.push(`<p>${inlineMd(para.join(" "))}</p>`);
+        }
+
+        return out.join("\n");
+      }
+
+      /* =====================================================================
+       * Report assembly (used by Copy + Download)
+       * ===================================================================== */
+      let currentReport = null;
+
+      function slugify(s) {
+        return String(s)
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "")
+          .slice(0, 60) || "report";
+      }
+
+      function buildReportMarkdown(report) {
+        const { query, region, videos, topics, blueprint, generatedAt, usedGemini } = report;
+        const lines = [];
+        lines.push(`# SEO Blueprint: ${query}`);
+        lines.push("");
+        lines.push(`- **Generated:** ${new Date(generatedAt).toLocaleString()}`);
+        lines.push(`- **Region:** ${region}`);
+        lines.push(`- **Competitors analysed:** ${videos.length}`);
+        lines.push(`- **Blueprint engine:** ${usedGemini ? "Google Gemini" : "built-in template"}`);
+        lines.push("");
+        lines.push("## Trending topics");
+        lines.push("");
+        lines.push(
+          topics.map((t) => `- **${t.term}** (${t.count})`).join("\n") || "_No topics extracted._",
+        );
+        lines.push("");
+        lines.push("## Competitor analytics");
+        lines.push("");
+        if (videos.length) {
+          lines.push("| # | Video | Channel | Published | Views | Likes | Comments | Engagement | Views/day |");
+          lines.push("|---|-------|---------|-----------|------:|------:|---------:|-----------:|----------:|");
+          videos.forEach((v, idx) => {
+            const title = v.title.replace(/\|/g, "\\|");
+            lines.push(
+              `| ${idx + 1} | [${title}](${v.url}) | ${v.channel.replace(/\|/g, "\\|")} | ${v.publishedDate} | ${NUM(
+                v.views,
+              ).toLocaleString()} | ${NUM(v.likes).toLocaleString()} | ${NUM(v.comments).toLocaleString()} | ${v.engagement.toFixed(2)}% | ${Math.round(v.viewsPerDay)} |`,
+            );
+          });
+        } else {
+          lines.push("_No competitor videos retrieved._");
+        }
+        lines.push("");
+        lines.push("---");
+        lines.push("");
+        lines.push("## Generated blueprint");
+        lines.push("");
+        lines.push(blueprint);
+        lines.push("");
+        return lines.join("\n");
+      }
+
+      /* =====================================================================
+       * Fallback blueprint (used when no Gemini key is provided / on failure)
+       * ===================================================================== */
+      function fallbackBlueprint(query, topics, videos) {
+        const kw = topics.slice(0, 8).map((t) => t.term);
+        const primary = topics[0]?.term || query;
+        const best = [...videos].sort((a, b) => b.viewsPerDay - a.viewsPerDay)[0];
+        const avgViews = videos.length
+          ? Math.round(videos.reduce((s, v) => s + v.views, 0) / videos.length)
+          : 0;
+        return [
+          "## Title ideas",
+          "",
+          `1. ${query} - the complete guide (${new Date().getFullYear()})`,
+          `2. I tested ${query} for 30 days - here is what worked`,
+          `3. ${query}: 7 mistakes beginners always make`,
+          `4. The honest truth about ${query}`,
+          `5. ${query} vs the alternatives - which should you choose?`,
+          "",
+          "## Target keywords",
+          "",
+          topics.slice(0, 12).map((t) => `- ${t.term} (seen ${t.count}x)`).join("\n") ||
+            `- ${query}`,
+          "",
+          "## Competitor insight",
+          "",
+          videos.length
+            ? `- Median top result sits around **${compact(averageViews(videos))} views**.\n- Strongest performer: **${videos[0].title}** by ${videos[0].channel} (${compact(videos[0].views)} views).`
+            : "- Not enough data yet.",
+          "",
+          "## Description template",
+          "",
+          "```",
+          `${query} - in this video we cover everything you need to know.`,
+          "",
+          "Timestamps:",
+          "00:00 Intro",
+          "01:00 What is " + query,
+          "03:00 Step-by-step walkthrough",
+          "06:00 Common mistakes",
+          "08:00 Results & recommendation",
+          "",
+          "Resources and links:",
+          "- (add your links)",
+          "```",
+          "",
+          "## Content outline",
+          "",
+          `1. Hook: show the outcome of ${query} in the first 15 seconds.`,
+          "2. Context: why this matters to the viewer right now.",
+          "3. Core walkthrough broken into clear steps.",
+          "4. Proof: screenshots, tests or on-camera results.",
+          "5. Call to action: subscribe + next video.",
+          "",
+          "## Tags & hashtags",
+          "",
+          topics.slice(0, 15).map((t) => `#${t.term.replace(/\s+/g, "")}`).join(" ") ||
+            `#${slugify(query)}`,
+          "",
+          "> Tip: add a Gemini API key above for a fully AI-written, data-driven blueprint " +
+            "(the built-in template above needs no key).",
+        ].join("\n");
+      }
+
+      function averageViews(videos) {
+        if (!videos.length) return 0;
+        return Math.round(videos.reduce((s, v) => s + v.views, 0) / videos.length);
+      }
+
+      /* =====================================================================
+       * UI helpers
+       * ===================================================================== */
+      const STEPS = ["search", "details", "trending", "analyze", "blueprint"];
+
+      function setStep(name, state) {
+        const li = document.querySelector(`.steps li[data-step="${name}"]`);
+        if (!li) return;
+        li.dataset.state = state;
+        li.querySelector(".mark").textContent = state === "done" ? "✓" : state === "active" ? "…" : "";
+      }
+
+      function showStatus({ title, detail, busy = true, error = false, steps = false }) {
+        const box = $("status");
+        box.hidden = false;
+        box.style.borderColor = error ? "rgba(248,81,73,0.5)" : "";
+        $("status-title").textContent = title;
+        $("status-detail").textContent = detail || "";
+        $("spinner").hidden = !busy;
+        $("steps").hidden = !steps;
+      }
+
+      function hideStatus() {
+        $("status").hidden = true;
+      }
+
+      function setBusy(busy) {
+        $("analyze-btn").disabled = busy;
+        $("analyze-btn").textContent = busy ? "Working…" : "Analyze";
+      }
+
+      function toastMessage(msg) {
+        const t = $("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        clearTimeout(toastMessage._t);
+        toastMessage._t = setTimeout(() => t.classList.remove("show"), 2200);
+      }
+
+      /* ---------------- analytics rendering ---------------- */
+      function renderTopics(topics) {
+        const box = $("topics");
+        box.innerHTML = "";
+        if (!topics.length) {
+          box.innerHTML = '<span class="hint">No topics extracted.</span>';
+          return;
+        }
+        const max = topics[0].count;
+        topics.forEach((t, idx) => {
+          const chip = el("span", { className: "topic" + (idx < 3 ? " big" : "") });
+          chip.innerHTML = `${escapeHtml(t.term)} <span class="count">${t.count}</span>`;
+          chip.style.opacity = String(0.72 + 0.28 * (t.count / max));
+          box.appendChild(chip);
+        });
+      }
+
+      function renderCompetitors(videos) {
+        const tbody = $("competitor-table").querySelector("tbody");
+        tbody.innerHTML = "";
+        $("competitor-sub").textContent = videos.length
+          ? `Top ${videos.length} results, ranked by views. Engagement = (likes + comments) / views.`
+          : "No results found.";
+        const maxViews = videos.reduce((m, v) => Math.max(m, v.views), 0) || 1;
+        videos.forEach((v, idx) => {
+          const tr = el("tr");
+          const engagement = v.views ? ((v.likes + v.comments) / v.views) * 100 : 0;
+          const barWidth = Math.max(3, Math.round((v.views / maxViews) * 60));
+          tr.innerHTML = [
+            `<td class="num">${idx + 1}</td>`,
+            `<td><a href="${v.url}" target="_blank" rel="noopener noreferrer">${escapeHtml(
+              v.title,
+            )}</a><div class="faint">${escapeHtml(v.channel)}</div></td>`,
+            `<td>${escapeHtml(v.channel)}</td>`,
+            `<td class="num">${escapeHtml(v.published)}</td>`,
+            `<td class="num">${compact(v.views)} <span class="bar" style="width:${barWidth}px"></span></td>`,
+            `<td class="num">${compact(v.likes)}</td>`,
+            `<td class="num">${compact(v.comments)}</td>`,
+            `<td class="num">${engagement.toFixed(1)}%</td>`,
+            `<td class="num">${compact(v.viewsPerDay)}</td>`,
+          ].join("");
+          tbody.appendChild(tr);
+        });
+      }
+
+      /* ---------------- main flow ---------------- */
+      async function runAnalysis(query) {
+        const ytKey = $("yt-key").value.trim();
+        const geminiKey = $("gemini-key").value.trim();
+        const model = $("gemini-model").value;
+        const region = $("region").value;
+        const max = parseInt($("max-results").value, 10) || 25;
+
+        if (!ytKey) {
+          showStatus({
+            title: "YouTube API key required",
+            detail: "Add your YouTube Data API v3 key in the configuration panel above.",
+            busy: false,
+            error: true,
+          });
+          $("yt-key").focus();
+          return;
+        }
+
+        const results = $("results");
+        results.hidden = true;
+        setBusy(true);
+        STEPS.forEach((s) => setStep(s, ""));
+
+        try {
+          showStatus({
+            title: `Searching YouTube for “${query}”…`,
+            detail: "Querying the YouTube Data API v3.",
+            steps: true,
+          });
+          setStep("search", "active");
+          const search = await yt.search(query, ytKey, max);
+          const ids = (search.items || [])
+            .map((it) => it.id?.videoId)
+            .filter(Boolean);
+          setStep("search", "done");
+
+          showStatus({
+            title: "Collecting competitor statistics…",
+            detail: "Fetching views, likes and comments.",
+            steps: true,
+          });
+          setStep("details", "active");
+          const details = await yt.videos(ids, ytKey);
+          setStep("details", "done");
+
+          showStatus({
+            title: "Scanning regional trending videos…",
+            detail: `Region ${region}.`,
+            steps: true,
+          });
+          setStep("trending", "active");
+          let trending = { items: [] };
+          try {
+            trending = await yt.trending(region, ytKey);
+          } catch {
+            /* trending is a bonus; keep going without it */
+          }
+          setStep("trending", "done");
+
+          showStatus({ title: "Extracting topics & analytics…", detail: "Scoring keywords and metrics.", steps: true });
+          setStep("analyze", "active");
+          const videos = (details.items || []).map((v) => {
+            const s = v.snippet || {};
+            const st = v.statistics || {};
+            const views = NUM(st.viewCount);
+            const likes = NUM(st.likeCount);
+            const comments = NUM(st.commentCount);
+            const age = Math.max(1, (Date.now() - new Date(s.publishedAt).getTime()) / 86400000);
+            return {
+              id: v.id,
+              title: s.title || "(untitled)",
+              channel: s.channelTitle || "",
+              published: new Date(s.publishedAt).toLocaleDateString(),
+              publishedIso: s.publishedAt,
+              description: s.description || "",
+              url: `https://www.youtube.com/watch?v=${v.id}`,
+              views,
+              likes,
+              comments,
+              ageDays: age,
+              engagement: views ? (likes + comments) / views : 0,
+              viewsPerDay: views / age,
+            };
+          });
+
+          const trendingTexts = (trending.items || []).map(
+            (v) => `${v.snippet?.title || ""} ${v.snippet?.description || ""}`,
+          );
+          const topics = extractTopics(
+            [...videos.map((v) => `${v.title} ${v.description}`), ...trendingTexts],
+            16,
+          );
+
+          renderTopics(topics);
+          renderCompetitors(videos);
+          results.hidden = false;
+          setStep("analyze", "done");
+
+          showStatus({
+            title: "Generating the SEO blueprint…",
+            detail: geminiKey ? `Asking ${model}.` : "Using the built-in template (no Gemini key).",
+            steps: true,
+          });
+          setStep("blueprint", "active");
+          let blueprint;
+          let usedGemini = false;
+          if (geminiKey) {
+            try {
+              blueprint = await generateBlueprint(
+                buildBlueprintPrompt(query, region, videos, topics),
+                geminiKey,
+                model,
+              );
+              usedGemini = true;
+            } catch (err) {
+              blueprint = fallbackBlueprint(query, topics, videos);
+              $("blueprint-notice").innerHTML = `<div class="notice">Gemini request failed (${escapeHtml(
+                err.message,
+              )}); showing the built-in template instead.</div>`;
+            }
+          } else {
+            blueprint = fallbackBlueprint(query, topics, videos);
+            $("blueprint-notice").innerHTML =
+              '<div class="notice info">Add a Gemini API key for an AI-written blueprint. The built-in template is shown below.</div>';
+          }
+          if (usedGemini) $("blueprint-notice").innerHTML = "";
+          setStep("blueprint", "done");
+
+          $("blueprint").innerHTML = renderMarkdown(blueprint);
+
+          currentReport = {
+            query,
+            region,
+            videos,
+            topics,
+            blueprint,
+            usedGemini,
+            generatedAt: new Date().toISOString(),
+          };
+
+          hideStatus();
+          $("results").scrollIntoView({ behavior: "smooth", block: "start" });
+        } catch (err) {
+          const hint =
+            err.status === 403
+              ? " Check that the YouTube Data API v3 is enabled and your quota/restrictions allow access."
+              : "";
+          showStatus({
+            title: "Something went wrong",
+            detail: (err.message || "Unknown error") + hint,
+            busy: false,
+            error: true,
+          });
+        } finally {
+          setBusy(false);
+        }
+      }
+
+      function buildBlueprintPrompt(query, region, videos, topics) {
+        const compactVideos = videos.slice(0, 20).map((v) => ({
+          title: v.title,
+          channel: v.channel,
+          published: v.publishedIso,
+          views: v.views,
+          likes: v.likes,
+          comments: v.comments,
+          viewsPerDay: Math.round(v.viewsPerDay),
+        }));
+        return [
+          "You are a senior YouTube SEO strategist. Using only the real research data below,",
+          "write a practical, data-driven YouTube SEO blueprint in GitHub-flavoured Markdown.",
+          "Do not invent statistics that are not implied by the data. Be specific and actionable.",
+          "",
+          `Target query: "${query}"`,
+          `Region: ${region}`,
+          "",
+          "Extracted keyword frequencies:",
+          topics.map((t) => `- ${t.term}: ${t.count}`).join("\n"),
+          "",
+          "Competitor videos (JSON):",
+          JSON.stringify(compactVideos, null, 0),
+          "",
+          "Write these H2 sections:",
+          "1. Title ideas (5 titles, <= 70 characters, include the year)",
+          "2. Description template (with timestamp placeholders)",
+          "3. Tags (15-20 comma-separated)",
+          "4. Keyword & search-intent analysis",
+          "5. Content outline / script beats",
+          "6. Thumbnail & hook ideas",
+          "7. Hashtags",
+          "8. Publishing & promotion checklist",
+          ].join("\n");
+      }
+
+      /* ---------------- clipboard + download ---------------- */
+      async function copyReport() {
+        if (!currentReport) return;
+        const md = buildReportMarkdown(currentReport);
+        try {
+          await navigator.clipboard.writeText(md);
+          toastMessage("Report copied to clipboard");
+        } catch {
+          const ta = el("textarea");
+          ta.value = md;
+          document.body.appendChild(ta);
+          ta.select();
+          try {
+            document.execCommand("copy");
+            toastMessage("Report copied to clipboard");
+          } catch {
+            toastMessage("Copy failed - select the text manually");
+          }
+          ta.remove();
+        }
+      }
+
+      function downloadReport() {
+        if (!currentReport) return;
+        const md = buildReportMarkdown(currentReport);
+        const name = `seo-blueprint-${slugify(currentReport.query)}-${new Date()
+          .toISOString()
+          .slice(0, 10)}.md`;
+        const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = el("a", { href: url, download: name });
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        toastMessage("Markdown report downloaded");
+      }
+
+      /* ---------------- boot ---------------- */
+      function boot() {
+        loadConfig();
+        wireToggles();
+        wireConfig();
+
+        $("examples").addEventListener("click", (e) => {
+          const chip = e.target.closest(".chip");
+          if (!chip) return;
+          $("query").value = chip.textContent.trim();
+          $("query").focus();
+        });
+
+        $("search-form").addEventListener("submit", (e) => {
+          e.preventDefault();
+          const q = $("query").value.trim();
+          if (!q) return;
+          store.set(LS.region, $("region").value);
+          store.set(LS.max, $("max-results").value);
+          runAnalysis(q);
+        });
+
+        $("copy-btn").addEventListener("click", copyReport);
+        $("download-btn").addEventListener("click", downloadReport);
+      }
+
+      document.addEventListener("DOMContentLoaded", boot);
     </script>
   </body>
 </html>
