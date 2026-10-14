@@ -16,6 +16,11 @@ Google's YouTube Data API and, for the AI blueprint, either the **Google Gemini*
 https://rakesh2626260-ctrl.github.io/Video-engine/
 ```
 
+## Documentation
+
+- **[`GUIDE.md`](GUIDE.md)** — step-by-step usage guide: getting the API keys, choosing an AI
+  engine (Gemini or OmniRoute), running an analysis, and troubleshooting.
+
 ## Features
 
 - **Bring-your-own API keys** — enter a *YouTube Data API v3* key plus the key for whichever
@@ -74,6 +79,7 @@ Browser (GitHub Pages)
 
 ```
 index.html                          # the whole dashboard (HTML + CSS + JS)
+GUIDE.md                            # step-by-step usage guide
 .nojekyll                           # tell GitHub Pages not to run Jekyll
 .github/workflows/deploy-pages.yml  # auto-deploy to Pages on push to main
 README.md
