@@ -55,24 +55,40 @@ fallback.
 ### Option B — OmniRoute gateway *(open-source, many models)*
 
 [OmniRoute](https://github.com/diegosouzapw/OmniRoute) is an open-source, OpenAI-compatible
-gateway that can route to Gemini and 300+ other providers behind one endpoint.
+gateway that routes to Gemini and 300+ other providers behind one endpoint.
 
-1. Start the gateway:
+**Requirements:** [Node.js](https://nodejs.org) 18+ (LTS) and a machine that can keep a
+process running while you use the dashboard (your computer, Android/Termux, or a small VPS).
+
+1. **Start the gateway and allow this dashboard's origin.** OmniRoute's CORS is
+   **fail-closed** — it blocks every browser origin until you opt one in, so this step is
+   **required**, not optional:
+
    ```bash
-   npx omniroute        # serves API + dashboard on http://localhost:20128
-   ```
-2. In the OmniRoute dashboard, connect at least one provider (e.g. Gemini, Groq, a free tier).
-3. Copy a key from **Dashboard → Endpoints**.
-4. In TrendScope, set **Blueprint engine → OmniRoute gateway** and fill in:
-   - **OmniRoute base URL:** `http://localhost:20128/v1` (the default)
-   - **OmniRoute API key:** the key you copied *(leave blank only if your gateway is keyless)*
-   - **Model or route:** `auto` lets OmniRoute choose, or pin one, e.g.
-     `gemini/gemini-2.5-flash`.
+   # allow only the TrendScope dashboard origin:
+   CORS_ALLOWED_ORIGINS=https://rakesh2626260-ctrl.github.io npx omniroute
 
-> **Important — CORS:** a GitHub Pages site is HTTPS. Browsers treat `localhost` as a
-> trustworthy origin, so the request usually goes through, **but OmniRoute still has to send
-> permissive CORS headers for the `github.io` origin.** If the request is blocked, either use
-> the Gemini engine, or expose OmniRoute over HTTPS on a domain that allows CORS.
+   # ...or, for a quick throwaway test (less safe, allow-all):
+   CORS_ALLOW_ALL=true npx omniroute
+   ```
+
+   Use the **origin only** — scheme + host, no path and no trailing slash (so
+   `https://rakesh2626260-ctrl.github.io`, **not** `…/Video-engine/`). It serves the API and
+   its own dashboard on **http://localhost:20128**.
+
+2. **Connect at least one provider** in the OmniRoute dashboard
+   (http://localhost:20128 → **Providers**) — e.g. Gemini, Groq or another free tier.
+3. **Copy the gateway key** from **Dashboard → Endpoints**.
+4. **Fill in TrendScope** — set **Blueprint engine → OmniRoute gateway**, then:
+   - **OmniRoute base URL:** `http://localhost:20128/v1`
+   - **OmniRoute API key:** the key from step 3 *(blank only if your gateway is keyless)*
+   - **Model or route:** `auto`, or pin one such as `gemini/gemini-2.5-flash`
+5. Keep the OmniRoute process running, then click **Analyze**.
+
+> **CORS, in one line:** if you skip the allowlist the browser blocks the response and the
+> dashboard shows an OmniRoute network error — add the origin (step 1) and it works. You can
+> also add it at runtime, without editing the environment, in
+> **OmniRoute → Security → CORS origins**.
 
 ---
 
