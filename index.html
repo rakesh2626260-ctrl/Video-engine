@@ -6,7 +6,7 @@
     <meta name="color-scheme" content="dark" />
     <meta
       name="description"
-      content="TrendScope - a 100% client-side YouTube SEO and competitor research dashboard powered by the YouTube Data API v3 and Google Gemini. No backend, no server, no terminal."
+      content="TrendScope - a 100% client-side YouTube SEO and competitor research dashboard powered by the YouTube Data API v3 and an AI engine of your choice (Google Gemini or an OmniRoute gateway). No backend, no server, no terminal."
     />
     <title>TrendScope - Serverless YouTube SEO &amp; Competitor Dashboard</title>
     <style>
@@ -682,8 +682,9 @@
       <section class="card" aria-labelledby="config-title">
         <h2 id="config-title">API configuration</h2>
         <p class="sub">
-          Your keys stay in this browser only (<code>localStorage</code>) and are sent straight to
-          Google. Nothing is transmitted to, or stored on, any server.
+          Your keys stay in this browser only (<code>localStorage</code>). The YouTube key and the
+          direct Gemini engine talk straight to Google; the OmniRoute engine talks only to the
+          gateway URL you supply. Nothing is relayed through any third-party server.
         </p>
 
         <div class="grid">
@@ -696,22 +697,65 @@
           </div>
 
           <div class="field">
-            <label for="gemini-key">Gemini API key <span class="opt">optional</span></label>
-            <div class="input-group">
-              <input id="gemini-key" type="password" autocomplete="off" spellcheck="false" placeholder="AIza..." />
-              <button class="toggle" type="button" data-toggle="gemini-key" aria-label="Show or hide Gemini key" aria-pressed="false"></button>
+            <label for="ai-provider">Blueprint engine</label>
+            <select id="ai-provider">
+              <option value="gemini">Google Gemini (direct API)</option>
+              <option value="omniroute">OmniRoute gateway (OpenAI-compatible)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Gemini (direct API) settings -->
+        <div id="gemini-settings" style="margin-top: 14px">
+          <div class="grid">
+            <div class="field">
+              <label for="gemini-key">Gemini API key <span class="opt">optional</span></label>
+              <div class="input-group">
+                <input id="gemini-key" type="password" autocomplete="off" spellcheck="false" placeholder="AIza..." />
+                <button class="toggle" type="button" data-toggle="gemini-key" aria-label="Show or hide Gemini key" aria-pressed="false"></button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="gemini-model">Gemini model</label>
+              <select id="gemini-model">
+                <option value="gemini-2.5-flash">gemini-2.5-flash (fast, recommended)</option>
+                <option value="gemini-2.5-pro">gemini-2.5-pro (highest quality)</option>
+                <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+                <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+              </select>
             </div>
           </div>
         </div>
 
-        <div class="field" style="max-width: 340px; margin-top: 14px">
-          <label for="gemini-model">Gemini model</label>
-          <select id="gemini-model">
-            <option value="gemini-2.5-flash">gemini-2.5-flash (fast, recommended)</option>
-            <option value="gemini-2.5-pro">gemini-2.5-pro (highest quality)</option>
-            <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-            <option value="gemini-1.5-flash">gemini-1.5-flash</option>
-          </select>
+        <!-- OmniRoute gateway settings (OpenAI-compatible, local or remote) -->
+        <div id="omniroute-settings" style="margin-top: 14px" hidden>
+          <div class="grid">
+            <div class="field">
+              <label for="omniroute-url">OmniRoute base URL</label>
+              <input id="omniroute-url" type="url" autocomplete="off" spellcheck="false" placeholder="http://localhost:20128/v1" />
+            </div>
+            <div class="field">
+              <label for="omniroute-key">OmniRoute API key <span class="opt">optional if keyless</span></label>
+              <div class="input-group">
+                <input id="omniroute-key" type="password" autocomplete="off" spellcheck="false" placeholder="your-omniroute-key" />
+                <button class="toggle" type="button" data-toggle="omniroute-key" aria-label="Show or hide OmniRoute key" aria-pressed="false"></button>
+              </div>
+            </div>
+          </div>
+          <div class="field" style="max-width: 420px; margin-top: 14px">
+            <label for="omniroute-model">Model or route</label>
+            <input id="omniroute-model" list="omniroute-models" autocomplete="off" spellcheck="false" placeholder="auto" />
+            <datalist id="omniroute-models">
+              <option value="auto"></option>
+              <option value="auto/cheap"></option>
+              <option value="auto/fast"></option>
+              <option value="auto/smart"></option>
+              <option value="gemini/gemini-2.5-flash"></option>
+              <option value="gemini/gemini-2.5-pro"></option>
+              <option value="openai/gpt-5.4"></option>
+              <option value="claude/claude-sonnet-4.5"></option>
+            </datalist>
+          </div>
         </div>
 
         <div class="row-actions">
@@ -725,6 +769,9 @@
           (enable <em>YouTube Data API v3</em>) and one in
           <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a>
           (for Gemini). Restrict the YouTube key to your Pages domain for safety.
+          For the OmniRoute engine, run your own gateway (local or hosted) and point it at the base
+          URL above &mdash;
+          <a href="https://github.com/diegosouzapw/OmniRoute" target="_blank" rel="noopener noreferrer">learn more</a>.
         </p>
       </section>
 
@@ -835,8 +882,8 @@
           TrendScope runs entirely in your browser. No backend, no proxies, no terminal required.
         </p>
         <p>
-          Data &copy; YouTube Data API v3 &middot; Blueprint &copy; Google Gemini. Quota and terms of the
-          respective Google APIs apply.
+          Data &copy; YouTube Data API v3 &middot; Blueprint &copy; the selected AI engine
+          (Google Gemini or OmniRoute). Quota and terms of the respective providers apply.
         </p>
       </footer>
     </div>
@@ -852,14 +899,19 @@
 
       const LS = {
         yt: "trendscope.youtubeKey",
+        provider: "trendscope.aiProvider",
         gemini: "trendscope.geminiKey",
         model: "trendscope.geminiModel",
+        omniUrl: "trendscope.omnirouteUrl",
+        omniKey: "trendscope.omnirouteKey",
+        omniModel: "trendscope.omnirouteModel",
         region: "trendscope.region",
         max: "trendscope.maxResults",
       };
 
       const YT_BASE = "https://www.googleapis.com/youtube/v3/";
       const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models/";
+      const DEFAULT_OMNIROUTE_URL = "http://localhost:20128/v1";
 
       const $ = (id) => document.getElementById(id);
       const el = (tag, props) => Object.assign(document.createElement(tag), props || {});
@@ -925,8 +977,20 @@
         $("yt-key").value = store.get(LS.yt);
         $("gemini-key").value = store.get(LS.gemini);
         $("gemini-model").value = store.get(LS.model, "gemini-2.5-flash");
+        $("ai-provider").value = store.get(LS.provider, "gemini");
+        $("omniroute-url").value = store.get(LS.omniUrl, DEFAULT_OMNIROUTE_URL);
+        $("omniroute-key").value = store.get(LS.omniKey);
+        $("omniroute-model").value = store.get(LS.omniModel, "auto");
         $("region").value = store.get(LS.region, "US");
         $("max-results").value = store.get(LS.max, "25");
+        syncProviderUI();
+      }
+
+      /* Show only the settings that belong to the selected blueprint engine. */
+      function syncProviderUI() {
+        const provider = $("ai-provider").value;
+        $("gemini-settings").hidden = provider !== "gemini";
+        $("omniroute-settings").hidden = provider !== "omniroute";
       }
 
       function wireConfig() {
@@ -943,15 +1007,35 @@
           store.set(LS.model, e.target.value);
           flashSaved();
         });
+
+        $("ai-provider").addEventListener("change", (e) => {
+          store.set(LS.provider, e.target.value);
+          syncProviderUI();
+          flashSaved();
+        });
+        $("omniroute-url").addEventListener("input", (e) => {
+          store.set(LS.omniUrl, e.target.value.trim());
+          persist();
+        });
+        $("omniroute-key").addEventListener("input", (e) => {
+          store.set(LS.omniKey, e.target.value.trim());
+          persist();
+        });
+        $("omniroute-model").addEventListener("input", (e) => {
+          store.set(LS.omniModel, e.target.value.trim());
+          persist();
+        });
+
         $("region").addEventListener("change", (e) => store.set(LS.region, e.target.value));
         $("max-results").addEventListener("change", () => store.set(LS.max, $("max-results").value));
 
         $("clear-keys").addEventListener("click", () => {
           if (!confirm("Remove the saved API keys from this browser?")) return;
-          [LS.yt, LS.gemini].forEach((k) => store.set(k, ""));
+          [LS.yt, LS.gemini, LS.omniKey].forEach((k) => store.set(k, ""));
           $("yt-key").value = "";
           $("gemini-key").value = "";
-          toast("Saved keys cleared");
+          $("omniroute-key").value = "";
+          toastMessage("Saved keys cleared");
         });
       }
 
@@ -1086,6 +1170,46 @@
           .join("\n")
           .trim();
         if (!out) throw new Error("Gemini returned an empty response.");
+        return out;
+      }
+
+      /* ---------------- OmniRoute gateway (OpenAI-compatible) ----------------
+       * OmniRoute (https://github.com/diegosouzapw/OmniRoute) exposes an
+       * OpenAI-compatible /v1/chat/completions endpoint. It is local-first by
+       * default (http://localhost:20128/v1) but can also run on a VPS or via
+       * its cloud endpoint. The model may be "auto" (OmniRoute picks a route)
+       * or a provider-prefixed id such as "gemini/gemini-2.5-flash".
+       * ---------------------------------------------------------------------- */
+      function normalizeOmniRouteBase(base) {
+        let b = String(base || "").trim().replace(/\/+$/, "");
+        if (!b) b = DEFAULT_OMNIROUTE_URL;
+        if (!/\/v1$/i.test(b)) b += "/v1";
+        return b;
+      }
+
+      async function generateOmniRouteBlueprint(prompt, baseUrl, apiKey, model) {
+        const url = `${normalizeOmniRouteBase(baseUrl)}/chat/completions`;
+        const headers = { "Content-Type": "application/json" };
+        if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+        const body = {
+          model: (model || "auto").trim(),
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.7,
+          top_p: 0.95,
+          max_tokens: 4096,
+          stream: false,
+        };
+        const res = await fetchWithTimeout(
+          url,
+          { method: "POST", headers, body: JSON.stringify(body) },
+          90000,
+        );
+        const data = await googleJson(res);
+        const choice = data?.choices?.[0]?.message?.content;
+        const out = (
+          Array.isArray(choice) ? choice.map((c) => c?.text || "").join("\n") : String(choice || "")
+        ).trim();
+        if (!out) throw new Error("OmniRoute returned an empty response.");
         return out;
       }
 
@@ -1252,14 +1376,14 @@
       }
 
       function buildReportMarkdown(report) {
-        const { query, region, videos, topics, blueprint, generatedAt, usedGemini } = report;
+        const { query, region, videos, topics, blueprint, generatedAt, engine } = report;
         const lines = [];
         lines.push(`# SEO Blueprint: ${query}`);
         lines.push("");
         lines.push(`- **Generated:** ${new Date(generatedAt).toLocaleString()}`);
         lines.push(`- **Region:** ${region}`);
         lines.push(`- **Competitors analysed:** ${videos.length}`);
-        lines.push(`- **Blueprint engine:** ${usedGemini ? "Google Gemini" : "built-in template"}`);
+        lines.push(`- **Blueprint engine:** ${engine || "built-in template"}`);
         lines.push("");
         lines.push("## Trending topics");
         lines.push("");
@@ -1352,8 +1476,8 @@
           topics.slice(0, 15).map((t) => `#${t.term.replace(/\s+/g, "")}`).join(" ") ||
             `#${slugify(query)}`,
           "",
-          "> Tip: add a Gemini API key above for a fully AI-written, data-driven blueprint " +
-            "(the built-in template above needs no key).",
+          "> Tip: add a Gemini API key, or switch the blueprint engine to OmniRoute, for a fully " +
+            "AI-written, data-driven blueprint (this built-in template needs no key).",
         ].join("\n");
       }
 
@@ -1449,8 +1573,12 @@
       /* ---------------- main flow ---------------- */
       async function runAnalysis(query) {
         const ytKey = $("yt-key").value.trim();
+        const provider = $("ai-provider").value;
         const geminiKey = $("gemini-key").value.trim();
         const model = $("gemini-model").value;
+        const omniUrl = $("omniroute-url").value.trim() || DEFAULT_OMNIROUTE_URL;
+        const omniKey = $("omniroute-key").value.trim();
+        const omniModel = $("omniroute-model").value.trim() || "auto";
         const region = $("region").value;
         const max = parseInt($("max-results").value, 10) || 25;
 
@@ -1545,34 +1673,46 @@
           results.hidden = false;
           setStep("analyze", "done");
 
+          const prompt = buildBlueprintPrompt(query, region, videos, topics);
+          const useOmniRoute = provider === "omniroute";
+          // OmniRoute may run keyless ("auto"); only a missing URL/gemini key disables AI.
+          const canCallAI = useOmniRoute ? Boolean(omniUrl) : Boolean(geminiKey);
+          const engineLabel = useOmniRoute ? "OmniRoute gateway" : "Google Gemini";
+
           showStatus({
             title: "Generating the SEO blueprint…",
-            detail: geminiKey ? `Asking ${model}.` : "Using the built-in template (no Gemini key).",
+            detail: canCallAI
+              ? `Asking ${useOmniRoute ? omniModel : model} via ${engineLabel}.`
+              : "Using the built-in template (no AI key).",
             steps: true,
           });
           setStep("blueprint", "active");
           let blueprint;
-          let usedGemini = false;
-          if (geminiKey) {
+          let engine = "built-in template";
+          if (canCallAI) {
             try {
-              blueprint = await generateBlueprint(
-                buildBlueprintPrompt(query, region, videos, topics),
-                geminiKey,
-                model,
-              );
-              usedGemini = true;
+              blueprint = useOmniRoute
+                ? await generateOmniRouteBlueprint(prompt, omniUrl, omniKey, omniModel)
+                : await generateBlueprint(prompt, geminiKey, model);
+              engine = useOmniRoute
+                ? `OmniRoute gateway (${omniModel})`
+                : `Google Gemini (${model})`;
             } catch (err) {
               blueprint = fallbackBlueprint(query, topics, videos);
-              $("blueprint-notice").innerHTML = `<div class="notice">Gemini request failed (${escapeHtml(
-                err.message,
-              )}); showing the built-in template instead.</div>`;
+              const netHint =
+                useOmniRoute && err instanceof TypeError
+                  ? " Check that OmniRoute is running at that URL and that it allows requests from this page's origin (CORS)."
+                  : "";
+              $("blueprint-notice").innerHTML = `<div class="notice">${escapeHtml(
+                engineLabel,
+              )} request failed (${escapeHtml(err.message)}); showing the built-in template instead.${netHint}</div>`;
             }
           } else {
             blueprint = fallbackBlueprint(query, topics, videos);
             $("blueprint-notice").innerHTML =
-              '<div class="notice info">Add a Gemini API key for an AI-written blueprint. The built-in template is shown below.</div>';
+              '<div class="notice info">Add a Gemini API key, or switch the blueprint engine to OmniRoute, for an AI-written blueprint. The built-in template is shown below.</div>';
           }
-          if (usedGemini) $("blueprint-notice").innerHTML = "";
+          if (engine !== "built-in template") $("blueprint-notice").innerHTML = "";
           setStep("blueprint", "done");
 
           $("blueprint").innerHTML = renderMarkdown(blueprint);
@@ -1583,7 +1723,7 @@
             videos,
             topics,
             blueprint,
-            usedGemini,
+            engine,
             generatedAt: new Date().toISOString(),
           };
 
