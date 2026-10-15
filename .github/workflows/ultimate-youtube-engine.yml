@@ -129,40 +129,7 @@ jobs:
           mode="${MODE:-code}"
           if [[ "$mode" == "storyboard" ]]; then
             # Parse + validate storyboard lines -> scenes.json (type/text/icon/narration).
-            python3 - <<'PY'
-            import json, re, sys
-            valid = {'title', 'step', 'stat', 'cta'}
-            scenes = []
-            with open('storyboard-raw.txt', encoding='utf-8') as f:
-                raw_lines = f.read().splitlines()
-            for lineno, line in enumerate(raw_lines, 1):
-                if not line.strip():
-                    continue
-                parts = [p.strip() for p in line.split('|')]
-                if len(parts) < 4:
-                    print(f"::error::line {lineno}: need 4 columns TYPE | TEXT | ICON | NARRATION, got {len(parts)}", flush=True)
-                    sys.exit(1)
-                stype = parts[0].lower()
-                if stype not in valid:
-                    print(f"::error::line {lineno}: bad TYPE '{parts[0]}' (want one of title, step, stat, cta)", flush=True)
-                    sys.exit(1)
-                text = parts[1]
-                icon = re.sub(r'[\s_]+', '-', parts[2].strip().lower())
-                icon = re.sub(r'[^a-z0-9-]', '', icon) or 'zap'
-                narration = ' '.join(parts[3:]).strip()
-                if not text:
-                    print(f"::error::line {lineno}: empty ON-SCREEN TEXT", flush=True)
-                    sys.exit(1)
-                if not narration:
-                    narration = text
-                scenes.append({'type': stype, 'text': text, 'icon': icon, 'narration': narration})
-            if not scenes:
-                print('::error::no valid storyboard scenes found', flush=True)
-                sys.exit(1)
-            with open('scenes.json', 'w', encoding='utf-8') as f:
-                json.dump(scenes, f, ensure_ascii=False)
-            print(f"parsed {len(scenes)} scenes")
-            PY
+            python3 scripts/parse-storyboard.py
             # Sanitize + synthesize once per scene, measure with ffprobe.
             GAP=0.35
             echo "GAP=$GAP" >> "$GITHUB_ENV"
@@ -219,25 +186,7 @@ jobs:
             fi
             ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 voiceover.wav
             # Write src/assets/storyboard.json [{type,text,icon,start,duration}] + meta.json
-            python3 - <<'PY'
-            import json
-            scenes = json.load(open('scenes.json'))
-            durations = [float(x.strip()) for x in open('durations.txt') if x.strip()]
-            assert len(durations) == len(scenes), f"{len(durations)} durations vs {len(scenes)} scenes"
-            gap = 0.35
-            out = []
-            t = 0.0
-            for s, d in zip(scenes, durations):
-                out.append({'type': s['type'], 'text': s['text'], 'icon': s['icon'], 'start': round(t, 4), 'duration': round(d, 4)})
-                t += d + gap
-            total = t - gap if out else 0.0
-            with open('src/assets/storyboard.json', 'w', encoding='utf-8') as f:
-                json.dump(out, f, ensure_ascii=False)
-            with open('src/assets/meta.json', 'w', encoding='utf-8') as f:
-                json.dump({'duration': total}, f)
-            print(json.dumps(out[:2], ensure_ascii=False)[:300])
-            print('total', total)
-            PY
+            python3 scripts/write-storyboard-json.py
             cat src/assets/storyboard.json
             cat src/assets/meta.json
           else
@@ -288,22 +237,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p src/assets/icons
-          python3 - <<'PY'
-          import json, shutil, pathlib
-          scenes = json.load(open('src/assets/storyboard.json'))
-          src = pathlib.Path('node_modules/lucide-static/icons')
-          dst = pathlib.Path('src/assets/icons')
-          for s in scenes:
-              name = s['icon']
-              cand = src / f"{name}.svg"
-              if not cand.exists():
-                  print(f"::warning::lucide icon '{name}' not found, falling back to zap")
-                  s['icon'] = 'zap'
-                  cand = src / 'zap.svg'
-              shutil.copyfile(cand, dst / f"{s['icon']}.svg")
-          json.dump(scenes, open('src/assets/storyboard.json', 'w', encoding='utf-8'), ensure_ascii=False)
-          print('icons:', sorted(p.name for p in dst.glob('*.svg')))
-          PY
+          python3 scripts/prepare-icons.py
           ls -la src/assets/icons
 
       - name: Patch Revideo (drop the crashing --single-process flag)
@@ -356,16 +290,7 @@ jobs:
           vd="$(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 final.mp4)"
           ad="$(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 voiceover.wav)"
           echo "video=$vd audio=$ad"
-          python3 - "$vd" "$ad" <<'PY'
-          import sys
-          vd, ad = float(sys.argv[1]), float(sys.argv[2])
-          diff = abs(vd - ad)
-          print(f"diff={diff:.4f}s")
-          if diff > 0.1:
-              print(f"::error::video ({vd:.3f}s) differs from voiceover ({ad:.3f}s) by {diff:.3f}s (> 0.1s)")
-              sys.exit(1)
-          print("duration check passed")
-          PY
+          python3 scripts/check-durations.py "$vd" "$ad"
 
       - name: Upload the video
         uses: actions/upload-artifact@v4
