@@ -85,14 +85,19 @@ collapsed **Advanced settings** panel and is optional.
    ```
 
    Connect at least one provider in the OmniRoute dashboard, copy the key from
-   **Dashboard → Endpoints**, then in TrendScope choose **OmniRoute gateway** and set the base
-   URL (`http://localhost:20128/v1`) and key. OmniRoute's CORS is **fail-closed**: allow this
-   page's origin with `CORS_ALLOWED_ORIGINS=https://rakesh2626260-ctrl.github.io` (or
-   `CORS_ALLOW_ALL=true` for a throwaway test) — see [`GUIDE.md`](GUIDE.md).
-- **GitHub token** *(only to render a video, or to use the GitHub data source)* — a token that
-  can dispatch workflows on this repository: classic `repo` + `workflow`, or a fine-grained
-  token with **Actions: read and write**. Kept in `localStorage`; only used to send the job and
-  fetch the artifact. Set it in **Advanced settings**.
+   **Dashboard → Endpoints**, then in TrendScope open **Advanced settings**, choose
+   **OmniRoute gateway** and set the base URL (`http://localhost:20128/v1`) and key.
+   OmniRoute's CORS is **fail-closed**: allow this page's origin with
+   `CORS_ALLOWED_ORIGINS=https://rakesh2626260-ctrl.github.io` (or `CORS_ALLOW_ALL=true` for a
+   throwaway test), or add it at runtime in **OmniRoute → Security → CORS origins** — see
+   [`GUIDE.md`](GUIDE.md).
+4. **YouTube API key as a repo secret** *(optional)* — add a repository secret named
+   `YOUTUBE_API_KEY` (*Settings → Secrets and variables → Actions*) to let **server-side
+   research** run without sending a key from the browser.
+5. **GitHub token** *(only to render a video, or to use the GitHub data source)* — a token that
+   can dispatch workflows on this repository: classic `repo` + `workflow`, or a fine-grained
+   token with **Actions: read and write**. Kept in `localStorage`; only used to send the job and
+   fetch the artifact. Set it in **Advanced settings**.
 
 ## How it works
 

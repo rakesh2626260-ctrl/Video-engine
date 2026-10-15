@@ -204,10 +204,12 @@ links straight to that field if you try to render without one.
 ## 7. Settings & privacy
 
 - **Hide/show toggles** (the eye icon) reveal or mask each key field.
-- Keys and preferences are stored in **`localStorage`** under `trendscope.*`.
+- Keys and preferences are stored in **`localStorage`** under `trendscope.*` (including the
+  chosen data source).
 - **Clear saved keys** wipes the YouTube, AI and GitHub keys from this browser.
-- Research sends data only to the APIs you configured (Google and/or your OmniRoute gateway).
-  Rendering runs inside your own repository's GitHub Actions. There is no TrendScope server.
+- In **browser** modes research talks only to the APIs you configured (Google and/or your
+  OmniRoute gateway). In **GitHub** modes the request goes to your own repository's Actions, and
+  the workflow talks to YouTube on your behalf. There is no TrendScope server.
 
 ---
 
@@ -218,8 +220,11 @@ links straight to that field if you try to render without one.
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | `403` / "quota exceeded" | Daily YouTube quota used up, or API not enabled | Wait for the daily reset, or check the API is enabled in Cloud Console |
-| `403` / "API key not valid" or "referrer blocked" | Key restrictions don't allow this site | Add `https://rakesh2626260-ctrl.github.io/*` under **Websites** |
-| "YouTube API key required" | The YouTube field is empty | Paste your YouTube Data API v3 key |
+| `403` / "API key not valid" or "referrer blocked" | Key restrictions don't allow this site | Add `https://rakesh2626260-ctrl.github.io/*` under **Websites** — or set the data source to **Auto**/**GitHub Actions**, which fetches from a runner instead |
+| "YouTube API key required" | The YouTube field is empty **and** no GitHub token is set | Paste your YouTube key, or add a GitHub token in Advanced settings |
+| "GitHub token required for server-side research" | Data source is **GitHub Actions** but no token | Add a token in Advanced settings, or switch the data source to **Auto** |
+| "The browser was blocked — retrying on GitHub Actions…" then an error | Auto-fell back, but the GitHub run also failed (usually a bad/restricted key or quota) | Open the linked run log; fix the key or store it as the `YOUTUBE_API_KEY` repo secret |
+| Server research times out | The run never started or is slow | Check the **Actions** tab; `youtube-research.yml` must exist on `main` |
 | Blueprint shows the built-in template | No AI key, or the AI request failed | Check the notice above the blueprint; add/verify your key or OmniRoute |
 | OmniRoute network error | Gateway stopped, wrong URL, or CORS | Keep OmniRoute running, use `…/v1`, and allow `https://rakesh2626260-ctrl.github.io` |
 
@@ -228,7 +233,7 @@ links straight to that field if you try to render without one.
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | "Open this page from its GitHub Pages URL…" | Owner/repo couldn't be derived (e.g. opened from a local file) | Use the Pages URL: `https://rakesh2626260-ctrl.github.io/Video-engine/` |
-| "Add a GitHub token first" | Token field empty | Create a token (§6.1) and paste it |
+| "Add a GitHub token in Advanced settings first" | Token field empty | Create a token (§6.1) and paste it into **Advanced settings** |
 | `401`/`403` "GitHub rejected the token" | Token lacks **Actions: write**, or expired | Make a new fine-grained token with **Actions: Read and write** on this repo |
 | Stuck on "Queued…" | The workflow never started | Check the **Actions** tab; repository_dispatch only runs if `ultimate-youtube-engine.yml` exists on `main` |
 | Run fails at Revideo/Chromium | Transient CI/Chromium issue | Re-run **Render video**; if it persists, open the run log and re-run the failed job |
@@ -243,6 +248,8 @@ links straight to that field if you try to render without one.
 Browser (GitHub Pages)
    │  fetch()
    ├──────────────────────────► YouTube Data API v3   competitor + trending data
+   │                            (or "GitHub Actions" mode:
+   │                             repository_dispatch → youtube-research.yml → research.json)
    ├── engine: Gemini ────────► Google Gemini API      SEO blueprint + script
    └── engine: OmniRoute ─────► your OmniRoute /v1     …routed to any connected model
 
