@@ -171,15 +171,16 @@ The **Script → video** card turns your narration into an MP4: GitHub Actions n
 ### 6.1 Create a GitHub token
 
 The page dispatches the video workflow through the GitHub API, so it needs a token that can
-run Actions on this repository.
+run Actions on this repository. The same token also powers **server-side research** (§0.1).
 
 - **Fine-grained (recommended):** GitHub → **Settings → Developer settings → Personal access
   tokens → Fine-grained tokens**. Limit *Repository access* to
   `rakesh2626260-ctrl/Video-engine`, and give it **Actions: Read and write**.
 - **Classic:** give it the `repo` and `workflow` scopes.
 
-Paste it into **GitHub token** (eye icon to reveal/mask). It is kept only in this browser's
-`localStorage`.
+Open **Advanced settings** at the top of the page and paste it into **GitHub token** (eye icon
+to reveal/mask). It is kept only in this browser's `localStorage`. The **Script → video** card
+links straight to that field if you try to render without one.
 
 ### 6.2 Write (or paste) the script
 
