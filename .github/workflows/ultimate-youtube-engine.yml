@@ -62,22 +62,51 @@ jobs:
             echo "::error::Invalid job_id (must be alphanumeric), refusing to continue."
             exit 1
           fi
+          mode="$(jq -r '.client_payload.mode // "code"' "$GITHUB_EVENT_PATH")"
+          if [[ "$mode" != "code" && "$mode" != "storyboard" ]]; then
+            echo "::warning::unknown mode '$mode', falling back to code"
+            mode="code"
+          fi
           echo "job_id=$job_id" >> "$GITHUB_OUTPUT"
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
           echo "JOB_ID=$job_id" >> "$GITHUB_ENV"
+          echo "MODE=$mode" >> "$GITHUB_ENV"
+          echo "mode=$mode job_id=$job_id"
 
       - name: Write the narration and code assets
         run: |
           set -euo pipefail
           mkdir -p src/assets out
-          jq -r '.client_payload.script // ""' "$GITHUB_EVENT_PATH" > narration.txt
-          jq -r '.client_payload.code // ""' "$GITHUB_EVENT_PATH" > src/assets/code.txt
+          mode="${MODE:-code}"
+          if [[ "$mode" == "storyboard" ]]; then
+            # Storyboard lines: prefer `storyboard`, fall back to `code` (dashboard
+            # sends the second box as `storyboard`).
+            jq -r '.client_payload.storyboard // .client_payload.code // ""' "$GITHUB_EVENT_PATH" > storyboard-raw.txt
+            # Keep the dispatch payload under 60KB (dashboard enforces this too).
+            bytes="$(wc -c < storyboard-raw.txt)"
+            echo "storyboard bytes: $bytes"
+            if [[ "$bytes" -gt 61440 ]]; then
+              echo "::error::storyboard payload is ${bytes} bytes, must stay under 60KB."
+              exit 1
+            fi
+            if ! grep -q '[^[:space:]]' storyboard-raw.txt; then
+              echo "::error::empty storyboard supplied (need one scene per line)."
+              exit 1
+            fi
+            # Placeholder code.txt so the code scene never breaks if it loads.
+            printf '// storyboard mode (no code)\n' > src/assets/code.txt
+            wc -c storyboard-raw.txt src/assets/code.txt
+          else
+            jq -r '.client_payload.script // ""' "$GITHUB_EVENT_PATH" > narration.txt
+            jq -r '.client_payload.code // ""' "$GITHUB_EVENT_PATH" > src/assets/code.txt
 
-          if ! grep -q '[^[:space:]]' narration.txt; then
-            echo "::warning::empty script supplied, using a placeholder line"
-            printf 'Here is the code.\n' > narration.txt
+            if ! grep -q '[^[:space:]]' narration.txt; then
+              echo "::warning::empty script supplied, using a placeholder line"
+              printf 'Here is the code.\n' > narration.txt
+            fi
+
+            wc -c narration.txt src/assets/code.txt
           fi
-
-          wc -c narration.txt src/assets/code.txt
 
       - name: Install Piper and the en_US-ryan-high voice
         run: |
@@ -97,21 +126,153 @@ jobs:
       - name: Synthesize the voiceover
         run: |
           set -euo pipefail
-          cd piper
-          LD_LIBRARY_PATH=. ./piper \
-            --model ../en_US-ryan-high.onnx \
-            --espeak_data ./espeak-ng-data \
-            --output_file ../voiceover.wav \
-            < ../narration.txt
-          cd ..
-          ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 voiceover.wav
+          mode="${MODE:-code}"
+          if [[ "$mode" == "storyboard" ]]; then
+            # Parse + validate storyboard lines -> scenes.json (type/text/icon/narration).
+            python3 - <<'PY'
+            import json, re, sys
+            valid = {'title', 'step', 'stat', 'cta'}
+            scenes = []
+            with open('storyboard-raw.txt', encoding='utf-8') as f:
+                raw_lines = f.read().splitlines()
+            for lineno, line in enumerate(raw_lines, 1):
+                if not line.strip():
+                    continue
+                parts = [p.strip() for p in line.split('|')]
+                if len(parts) < 4:
+                    print(f"::error::line {lineno}: need 4 columns TYPE | TEXT | ICON | NARRATION, got {len(parts)}", flush=True)
+                    sys.exit(1)
+                stype = parts[0].lower()
+                if stype not in valid:
+                    print(f"::error::line {lineno}: bad TYPE '{parts[0]}' (want one of title, step, stat, cta)", flush=True)
+                    sys.exit(1)
+                text = parts[1]
+                icon = re.sub(r'[\s_]+', '-', parts[2].strip().lower())
+                icon = re.sub(r'[^a-z0-9-]', '', icon) or 'zap'
+                narration = ' '.join(parts[3:]).strip()
+                if not text:
+                    print(f"::error::line {lineno}: empty ON-SCREEN TEXT", flush=True)
+                    sys.exit(1)
+                if not narration:
+                    narration = text
+                scenes.append({'type': stype, 'text': text, 'icon': icon, 'narration': narration})
+            if not scenes:
+                print('::error::no valid storyboard scenes found', flush=True)
+                sys.exit(1)
+            with open('scenes.json', 'w', encoding='utf-8') as f:
+                json.dump(scenes, f, ensure_ascii=False)
+            print(f"parsed {len(scenes)} scenes")
+            PY
+            # Sanitize + synthesize once per scene, measure with ffprobe.
+            GAP=0.35
+            echo "GAP=$GAP" >> "$GITHUB_ENV"
+            n="$(python3 -c "import json; print(len(json.load(open('scenes.json'))))")"
+            echo "scenes: $n"
+            : > durations.txt
+            i=0
+            while [[ "$i" -lt "$n" ]]; do
+              python3 -c "import json; print(json.load(open('scenes.json'))[$i]['narration'])" > scene-raw.txt
+              node scripts/sanitize-narration.mjs scene-raw.txt scene-clean.txt
+              if ! grep -q '[^[:space:]]' scene-clean.txt; then
+                python3 -c "import json; print(json.load(open('scenes.json'))[$i]['text'])" > scene-clean.txt
+              fi
+              wc -c scene-clean.txt
+              (cd piper && LD_LIBRARY_PATH=. ./piper \
+                --model ../en_US-ryan-high.onnx \
+                --espeak_data ./espeak-ng-data \
+                --output_file "../scene-${i}.wav" \
+                < ../scene-clean.txt)
+              d="$(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "scene-${i}.wav")"
+              echo "scene $i duration: $d"
+              printf '%s\n' "$d" >> durations.txt
+              i=$((i + 1))
+            done
+            # 0.35s of silence between scenes, matching Piper's sample rate.
+            rate="$(ffprobe -v error -show_entries stream=sample_rate -of default=nw=1:nk=1 scene-0.wav | head -n 1)"
+            ch="$(ffprobe -v error -show_entries stream=channels -of default=nw=1:nk=1 scene-0.wav | head -n 1)"
+            rate="${rate:-22050}"
+            ch="${ch:-1}"
+            layout="$([ "${ch}" = "1" ] && echo mono || echo stereo)"
+            echo "silence: ${GAP}s ${rate}Hz ${layout}"
+            ffmpeg -hide_banner -y -f lavfi -i "anullsrc=r=${rate}:cl=${layout}" -t "$GAP" silence.wav
+            # Concatenate scene / silence / scene ... -> voiceover.wav
+            inputs=()
+            filters=()
+            idx=0
+            i=0
+            while [[ "$i" -lt "$n" ]]; do
+              inputs+=(-i "scene-${i}.wav")
+              filters+=("[${idx}:a]")
+              idx=$((idx + 1))
+              if [[ "$i" -lt $((n - 1)) ]]; then
+                inputs+=(-i silence.wav)
+                filters+=("[${idx}:a]")
+                idx=$((idx + 1))
+              fi
+              i=$((i + 1))
+            done
+            if [[ "$n" -eq 1 ]]; then
+              cp scene-0.wav voiceover.wav
+            else
+              filter="$(printf '%s' "${filters[@]}" | tr -d ' ')concat=n=${idx}:v=0:a=1[a]"
+              ffmpeg -hide_banner -y "${inputs[@]}" -filter_complex "$filter" -map '[a]' voiceover.wav
+            fi
+            ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 voiceover.wav
+            # Write src/assets/storyboard.json [{type,text,icon,start,duration}] + meta.json
+            python3 - <<'PY'
+            import json
+            scenes = json.load(open('scenes.json'))
+            durations = [float(x.strip()) for x in open('durations.txt') if x.strip()]
+            assert len(durations) == len(scenes), f"{len(durations)} durations vs {len(scenes)} scenes"
+            gap = 0.35
+            out = []
+            t = 0.0
+            for s, d in zip(scenes, durations):
+                out.append({'type': s['type'], 'text': s['text'], 'icon': s['icon'], 'start': round(t, 4), 'duration': round(d, 4)})
+                t += d + gap
+            total = t - gap if out else 0.0
+            with open('src/assets/storyboard.json', 'w', encoding='utf-8') as f:
+                json.dump(out, f, ensure_ascii=False)
+            with open('src/assets/meta.json', 'w', encoding='utf-8') as f:
+                json.dump({'duration': total}, f)
+            print(json.dumps(out[:2], ensure_ascii=False)[:300])
+            print('total', total)
+            PY
+            cat src/assets/storyboard.json
+            cat src/assets/meta.json
+          else
+            # Code mode (as before) + narration sanitizer before Piper.
+            node scripts/sanitize-narration.mjs narration.txt narration-clean.txt
+            if ! grep -q '[^[:space:]]' narration-clean.txt; then
+              echo "::warning::sanitized narration empty, using placeholder"
+              printf 'Here is the code.\n' > narration-clean.txt
+            fi
+            mv narration-clean.txt narration.txt
+            cat narration.txt
+            cd piper
+            LD_LIBRARY_PATH=. ./piper \
+              --model ../en_US-ryan-high.onnx \
+              --espeak_data ./espeak-ng-data \
+              --output_file ../voiceover.wav \
+              < ../narration.txt
+            cd ..
+            ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 voiceover.wav
+          fi
 
       - name: Write the duration metadata
         run: |
           set -euo pipefail
-          duration="$(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 voiceover.wav)"
-          printf '{"duration": %s}\n' "$duration" > src/assets/meta.json
-          cat src/assets/meta.json
+          mode="${MODE:-code}"
+          if [[ "$mode" == "storyboard" ]]; then
+            # Already written by the storyboard synthesis step; just verify.
+            cat src/assets/meta.json
+            cat src/assets/storyboard.json
+            python3 -c "import json; d=json.load(open('src/assets/meta.json'))['duration']; s=json.load(open('src/assets/storyboard.json')); assert d>0 and len(s)>0; print('scenes', len(s), 'total', d)"
+          else
+            duration="$(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 voiceover.wav)"
+            printf '{"duration": %s}\n' "$duration" > src/assets/meta.json
+            cat src/assets/meta.json
+          fi
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -121,6 +282,29 @@ jobs:
 
       - name: Install npm dependencies
         run: npm install --no-audit --no-fund
+
+      - name: Prepare storyboard icons (Lucide)
+        if: env.MODE == 'storyboard'
+        run: |
+          set -euo pipefail
+          mkdir -p src/assets/icons
+          python3 - <<'PY'
+          import json, shutil, pathlib
+          scenes = json.load(open('src/assets/storyboard.json'))
+          src = pathlib.Path('node_modules/lucide-static/icons')
+          dst = pathlib.Path('src/assets/icons')
+          for s in scenes:
+              name = s['icon']
+              cand = src / f"{name}.svg"
+              if not cand.exists():
+                  print(f"::warning::lucide icon '{name}' not found, falling back to zap")
+                  s['icon'] = 'zap'
+                  cand = src / 'zap.svg'
+              shutil.copyfile(cand, dst / f"{s['icon']}.svg")
+          json.dump(scenes, open('src/assets/storyboard.json', 'w', encoding='utf-8'), ensure_ascii=False)
+          print('icons:', sorted(p.name for p in dst.glob('*.svg')))
+          PY
+          ls -la src/assets/icons
 
       - name: Patch Revideo (drop the crashing --single-process flag)
         run: node scripts/patch-revideo.mjs
@@ -145,7 +329,7 @@ jobs:
           exit 0
 
       - name: Render the silent video
-        run: node render.mjs
+        run: MODE="${MODE:-code}" node render.mjs
 
       - name: Mux the voiceover onto the video
         run: |
@@ -165,6 +349,23 @@ jobs:
             -show_entries stream=codec_name,width,height,r_frame_rate \
             -show_entries format=duration,size \
             -of default=nw=1 final.mp4
+
+      - name: Check video duration matches the voiceover (within 0.1s)
+        run: |
+          set -euo pipefail
+          vd="$(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 final.mp4)"
+          ad="$(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 voiceover.wav)"
+          echo "video=$vd audio=$ad"
+          python3 - "$vd" "$ad" <<'PY'
+          import sys
+          vd, ad = float(sys.argv[1]), float(sys.argv[2])
+          diff = abs(vd - ad)
+          print(f"diff={diff:.4f}s")
+          if diff > 0.1:
+              print(f"::error::video ({vd:.3f}s) differs from voiceover ({ad:.3f}s) by {diff:.3f}s (> 0.1s)")
+              sys.exit(1)
+          print("duration check passed")
+          PY
 
       - name: Upload the video
         uses: actions/upload-artifact@v4

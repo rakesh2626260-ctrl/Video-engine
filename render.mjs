@@ -44,8 +44,23 @@ console.log(`[render] ffmpeg paths: ${JSON.stringify(ffmpeg)}`);
  * page dies with "Failed to resolve import", and the render then waits FOREVER
  * without printing anything -- which is exactly how the earlier CI runs burned
  * their 45 minute timeout. It must be relative (leading `./`) or absolute.
+ *
+ * MODE selects the project: `code` (default, typing scene) or `storyboard`
+ * (kinetic title/step/stat/cta scenes). The workflow sets MODE from the
+ * dispatch payload; locally use e.g. `MODE=storyboard node render.mjs`.
  */
-const PROJECT_FILE = './src/project.ts';
+const MODE = (process.env.MODE ?? 'code').toLowerCase() === 'storyboard' ? 'storyboard' : 'code';
+const PROJECT_FILE = MODE === 'storyboard' ? './src/project-storyboard.ts' : './src/project.ts';
+
+/**
+ * Optional fps override for fast local tests (e.g. `FPS=15`). The project
+ * files read the injected `__FPS__` global; production defaults to 60.
+ */
+const FPS = Number(process.env.FPS ?? 60) > 0 ? Number(process.env.FPS ?? 60) : 60;
+
+console.log(`[render] mode         : ${MODE}`);
+console.log(`[render] project     : ${PROJECT_FILE}`);
+console.log(`[render] fps         : ${FPS}`);
 
 /** Hard watchdog so a broken page can never hang until the job timeout. */
 const TIMEOUT_MINUTES = Number(process.env.RENDER_TIMEOUT_MINUTES ?? 30);
@@ -86,6 +101,9 @@ try {
         },
         ffmpeg,
         viteConfig: {
+          define: {
+            __FPS__: JSON.stringify(FPS),
+          },
           server: {
             watch: {usePolling: true, interval: 120},
           },

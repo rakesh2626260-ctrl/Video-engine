@@ -1039,10 +1039,11 @@
       <!-- ---------------- script -> video ---------------- -->
       <section class="card" id="video-card" aria-labelledby="video-title">
         <h2 id="video-title">Script &rarr; video</h2>
-        <p class="sub">
+        <p class="sub" id="video-sub">
           Turns your narration and a code block into an MP4: GitHub Actions narrates the
           <strong>voiceover script</strong> with Piper TTS and types the <strong>code block</strong>
           out in an animated editor (Revideo), then hands the finished file back here.
+          Switch to <strong>Storyboard video</strong> for kinetic title / step / stat / CTA scenes.
         </p>
 
         <p class="hint" id="video-token-hint">
@@ -1051,8 +1052,16 @@
           only dispatches the <code>ultimate-youtube-engine</code> workflow on this repository.
         </p>
 
+        <div class="field" style="max-width: 420px; margin-top: 14px">
+          <label for="video-mode">Video mode</label>
+          <select id="video-mode">
+            <option value="code">Code video</option>
+            <option value="storyboard">Storyboard video</option>
+          </select>
+        </div>
+
         <div class="grid" style="margin-top: 14px">
-          <div class="field">
+          <div class="field" id="video-script-field">
             <label for="video-script">Voiceover script</label>
             <textarea
               id="video-script"
@@ -1061,8 +1070,8 @@
               placeholder="In this video we build…"
             ></textarea>
           </div>
-          <div class="field">
-            <label for="video-code">Code block <span class="opt">typed on screen</span></label>
+          <div class="field" id="video-code-field">
+            <label for="video-code" id="video-code-label">Code block <span class="opt">typed on screen</span></label>
             <textarea
               id="video-code"
               class="code-input"
@@ -1071,6 +1080,12 @@
               wrap="off"
               placeholder="export function greet(name: string) { … }"
             ></textarea>
+            <p class="hint" id="video-code-hint" hidden>
+              One scene per line: <code>TYPE | ON-SCREEN TEXT | ICON | NARRATION</code>.
+              TYPE is <code>title</code>, <code>step</code>, <code>stat</code> or <code>cta</code>.
+              ICON is a Lucide name (van, battery-charging, sun, thermometer, home, wrench, zap,
+              dollar-sign, mountain…).
+            </p>
           </div>
         </div>
 
@@ -2101,6 +2116,8 @@
         token: "trendscope.githubToken",
         script: "trendscope.videoScript",
         code: "trendscope.videoCode",
+        mode: "trendscope.videoMode",
+        storyboard: "trendscope.videoStoryboard",
       };
 
       const FALLBACK_CODE = [
@@ -2110,6 +2127,53 @@
         "  return frames;",
         "}",
       ].join("\n");
+
+      const CODE_PLACEHOLDER = "export function greet(name: string) { … }";
+      const STORYBOARD_PLACEHOLDER = [
+        "title | Tiny Home, Big Freedom | van | Welcome to tiny home living in under four hundred square feet.",
+        "step | Park where you like | home | Park it anywhere and wake up somewhere new.",
+        "step | Solar keeps you free | sun | Rooftop solar powers your whole day.",
+        "stat | SOLAR: 98% | battery-charging | Your solar covers ninety eight percent of your power.",
+        "cta | Start your build today | wrench | Click below and start your tiny home build today.",
+      ].join("\n");
+
+      function videoMode() {
+        const sel = $("video-mode");
+        return sel && sel.value === "storyboard" ? "storyboard" : "code";
+      }
+
+      function syncVideoModeUI() {
+        const mode = videoMode();
+        const isStoryboard = mode === "storyboard";
+        const scriptField = $("video-script-field");
+        const codeLabel = $("video-code-label");
+        const codeBox = $("video-code");
+        const hint = $("video-code-hint");
+        const writeBtn = $("write-script");
+        if (scriptField) scriptField.hidden = isStoryboard;
+        if (codeLabel)
+          codeLabel.innerHTML = isStoryboard
+            ? 'Storyboard scenes <span class="opt">one per line</span>'
+            : 'Code block <span class="opt">typed on screen</span>';
+        if (codeBox) {
+          codeBox.placeholder = isStoryboard ? STORYBOARD_PLACEHOLDER : CODE_PLACEHOLDER;
+          codeBox.classList.toggle("code-input", !isStoryboard);
+          codeBox.setAttribute("wrap", isStoryboard ? "soft" : "off");
+        }
+        if (hint) hint.hidden = !isStoryboard;
+        if (writeBtn) {
+          writeBtn.disabled = isStoryboard;
+          writeBtn.title = isStoryboard
+            ? "AI script writing is only available in Code video mode."
+            : "";
+        }
+        const sub = $("video-sub");
+        if (sub) {
+          sub.innerHTML = isStoryboard
+            ? "Storyboard mode: each line becomes a kinetic scene — <strong>TYPE | ON-SCREEN TEXT | ICON | NARRATION</strong>. GitHub Actions narrates each scene with Piper TTS and renders the animated storyboard."
+            : "Turns your narration and a code block into an MP4: GitHub Actions narrates the <strong>voiceover script</strong> with Piper TTS and types the <strong>code block</strong> out in an animated editor (Revideo), then hands the finished file back here. Switch to <strong>Storyboard video</strong> for kinetic title / step / stat / CTA scenes.";
+        }
+      }
 
       /** owner/repo of this Pages site, derived from <user>.github.io/<repo>/. */
       function detectRepo() {
@@ -2314,22 +2378,55 @@
           return;
         }
 
-        const script = $("video-script").value.trim();
-        const code = $("video-code").value;
-        store.set(LS_VIDEO.script, $("video-script").value);
-        store.set(LS_VIDEO.code, code);
-        if (!script && !code.trim()) {
-          toastMessage("Add a voiceover script or a code block first.");
-          return;
+        const mode = videoMode();
+        let clientPayload;
+        if (mode === "storyboard") {
+          const storyboard = $("video-code").value.trim();
+          store.set(LS_VIDEO.storyboard, $("video-code").value);
+          if (!storyboard) {
+            toastMessage("Add storyboard scenes first (one per line).");
+            return;
+          }
+          clientPayload = { job_id: renderJob, mode: "storyboard", storyboard };
+          // Reuse renderJob below; allocate now so payload check can run first.
+          stopRenderPolling();
+          renderBusy = true;
+          $("render-video").disabled = true;
+          $("render-video").textContent = "Working…";
+          $("render-result").hidden = true;
+          renderJob = newJobId();
+          clientPayload.job_id = renderJob;
+        } else {
+          const script = $("video-script").value.trim();
+          const code = $("video-code").value;
+          store.set(LS_VIDEO.script, $("video-script").value);
+          store.set(LS_VIDEO.code, code);
+          if (!script && !code.trim()) {
+            toastMessage("Add a voiceover script or a code block first.");
+            return;
+          }
+          stopRenderPolling();
+          renderBusy = true;
+          $("render-video").disabled = true;
+          $("render-video").textContent = "Working…";
+          $("render-result").hidden = true;
+
+          renderJob = newJobId();
+          clientPayload = { job_id: renderJob, mode: "code", script, code };
         }
 
-        stopRenderPolling();
-        renderBusy = true;
-        $("render-video").disabled = true;
-        $("render-video").textContent = "Working…";
-        $("render-result").hidden = true;
-
-        renderJob = newJobId();
+        const payloadBytes = new TextEncoder().encode(JSON.stringify(clientPayload)).length;
+        if (payloadBytes > 60 * 1024) {
+          stopRenderPolling();
+          resetRenderButton();
+          setRenderStatus(
+            "error",
+            "Payload too large",
+            `Storyboard/code payload is ${(payloadBytes / 1024).toFixed(1)} KB — keep it under 60 KB.`,
+          );
+          toastMessage("Payload exceeds 60 KB — shorten the input.");
+          return;
+        }
         setRenderStatus("live", "Dispatching…", "Sending the job to GitHub Actions.");
 
         try {
@@ -2338,7 +2435,7 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               event_type: "generate_video",
-              client_payload: { job_id: renderJob, script, code },
+              client_payload: clientPayload,
             }),
           });
         } catch (err) {
@@ -2535,7 +2632,16 @@
       function bootVideo() {
         $("gh-token").value = store.get(LS_VIDEO.token);
         $("video-script").value = store.get(LS_VIDEO.script);
-        $("video-code").value = store.get(LS_VIDEO.code, FALLBACK_CODE);
+        const savedCode = store.get(LS_VIDEO.code, "");
+        const savedStoryboard = store.get(LS_VIDEO.storyboard, "");
+        const savedMode = store.get(LS_VIDEO.mode, "code");
+        $("video-mode").value = savedMode === "storyboard" ? "storyboard" : "code";
+        // Preserve both drafts: code box shows the draft for the active mode.
+        $("video-code").value =
+          $("video-mode").value === "storyboard"
+            ? savedStoryboard
+            : savedCode || FALLBACK_CODE;
+        syncVideoModeUI();
         $("repo-name").textContent =
           gh.owner && gh.repo ? `${gh.owner}/${gh.repo}` : "your repository";
         $("dispatch-endpoint").textContent =
@@ -2545,7 +2651,24 @@
 
         $("gh-token").addEventListener("input", (e) => store.set(LS_VIDEO.token, e.target.value.trim()));
         $("video-script").addEventListener("input", (e) => store.set(LS_VIDEO.script, e.target.value));
-        $("video-code").addEventListener("input", (e) => store.set(LS_VIDEO.code, e.target.value));
+        $("video-code").addEventListener("input", (e) => {
+          if (videoMode() === "storyboard") store.set(LS_VIDEO.storyboard, e.target.value);
+          else store.set(LS_VIDEO.code, e.target.value);
+        });
+        $("video-mode").addEventListener("change", (e) => {
+          const next = e.target.value === "storyboard" ? "storyboard" : "code";
+          // Stash the draft we are leaving, restore the draft we enter.
+          if (next === "storyboard") {
+            store.set(LS_VIDEO.code, $("video-code").value);
+            $("video-code").value = store.get(LS_VIDEO.storyboard, "");
+          } else {
+            store.set(LS_VIDEO.storyboard, $("video-code").value);
+            const code = store.get(LS_VIDEO.code, "");
+            $("video-code").value = code || FALLBACK_CODE;
+          }
+          store.set(LS_VIDEO.mode, next);
+          syncVideoModeUI();
+        });
 
         $("render-video").addEventListener("click", renderVideo);
         $("write-script").addEventListener("click", writeScriptWithAI);
